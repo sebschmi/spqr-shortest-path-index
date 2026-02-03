@@ -10,9 +10,9 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "bidirected-adjacency-array"
-version = "0.2.0"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aaf4573b429d0b1cbf4f5511df10eba1b5ec2e533a114ca81e161de24943ffad"
+checksum = "1eec737e9b0de42cbe3841b8fac49bc9df768f21732ad550e5e565ab57518261"
 dependencies = [
  "log",
  "num-traits",

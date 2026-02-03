@@ -10,7 +10,7 @@ edition = "2024"
 
 [dependencies]
 spqr-tree = { version = "0.2.0", features = ["bidirected-adjacency-array"] }
-bidirected-adjacency-array = "0.2.0"
+bidirected-adjacency-array = "0.2.2"
 optional-numeric-index = "0.3.4"
 num-traits = "0.2.19"
 binary-heap-plus = "0.5.0"
