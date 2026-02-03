@@ -1,6 +1,11 @@
 [package]
 name = "spqr-shortest-path-index"
+description="A shortest-path index based on the SPQR decomposition."
 version = "0.1.0"
+authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
+license = "BSD-2-Clause"
+repository = "https://github.com/sebschmi/spqr-shortest-path-index"
+
 edition = "2024"
 
 [dependencies]
