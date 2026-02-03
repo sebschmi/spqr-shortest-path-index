@@ -1,6 +1,6 @@
 [package]
 name = "spqr-shortest-path-index"
-description="A shortest-path index based on the SPQR decomposition."
+description = "A shortest-path index based on the SPQR decomposition."
 version = "0.1.0"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
 license = "BSD-2-Clause"
@@ -9,3 +9,8 @@ repository = "https://github.com/sebschmi/spqr-shortest-path-index"
 edition = "2024"
 
 [dependencies]
+spqr-tree = { version = "0.2.0", features = ["bidirected-adjacency-array"] }
+bidirected-adjacency-array = "0.2.0"
+optional-numeric-index = "0.3.4"
+num-traits = "0.2.19"
+binary-heap-plus = "0.5.0"
