@@ -28,17 +28,59 @@ struct ClosedNode<IndexType> {
     predecessor: OptionalDirectedNodeIndex<IndexType>,
 }
 
+/// Compute the shortest path between two sequence indices in two (possibly equal) GFA nodes.
+///
+/// If `target` is before `source` in the same node, then the path will be a cycle.
 pub fn shortest_path<IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaEdgeData>(
     graph: &BidirectedAdjacencyArray<IndexType, NodeData, EdgeData>,
     source: GfaLocation<IndexType>,
     target: GfaLocation<IndexType>,
 ) -> Option<GfaPath<IndexType>> {
+    if source.node() == target.node() && source.offset() <= target.offset() {
+        // If source is before or at target in the same node, then the shortest path is within the node (because we assume edges to be blunt-ended).
+        return Some(GfaPath::new(
+            vec![PathElement::new(
+                source.node(),
+                source.offset(),
+                target.offset(),
+            )],
+            target.offset() - source.offset(),
+        ));
+    }
+
     // We search in reverse such that we don't need to invert the path after backtracking.
     let (source, target) = (target.invert(graph), source.invert(graph));
 
     let mut open_list = BinaryHeap::new_min();
     let mut closed_list = HashMap::<DirectedNodeIndex<IndexType>, ClosedNode<IndexType>>::new();
-    open_list.push(OpenNode::new_root(source.node()));
+    let is_circular_special_case =
+        source.node() == target.node() && source.offset() > target.offset();
+
+    if is_circular_special_case {
+        // If target is before source in the same node, then we have to expand the source manually, because Dijkstra's algorithm does not support circular paths.
+        for outgoing_edge in graph.iter_outgoing_edges(source.node()) {
+            debug_assert_eq!(
+                graph
+                    .directed_edge_data(outgoing_edge.index())
+                    .data()
+                    .overlap(),
+                0,
+                "Only GFA graphs with blunt-ended (i.e. zero overlap) edges are supported. Use for example https://github.com/vgteam/GetBlunted to bluntify your graph.",
+            );
+
+            let node = outgoing_edge.to();
+            let cost = graph.node_data(source.node().into_bidirected()).len();
+            let predecessor = OptionalDirectedNodeIndex::new_none();
+
+            open_list.push(OpenNode {
+                node,
+                cost,
+                predecessor,
+            });
+        }
+    } else {
+        open_list.push(OpenNode::new_root(source.node()));
+    }
 
     while let Some(open_node) = open_list.pop() {
         // Close node.
@@ -64,7 +106,6 @@ pub fn shortest_path<IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDa
             )];
 
             // Collect nodes.
-            // While backtracking, always assume that nodes start at offset 0.
             let mut current_node = open_node.node;
             while let Some(predecessor) = closed_list
                 .get(&current_node)
@@ -73,29 +114,29 @@ pub fn shortest_path<IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDa
                 .into_option()
             {
                 let offset = GfaNodeOffset::from_usize(0);
-                let limit = closed_list.get(&current_node).unwrap().cost
-                    - closed_list.get(&predecessor).unwrap().cost;
-                path.push(PathElement::new_inverted(
-                    predecessor,
-                    offset,
-                    limit.into_offset(),
-                    graph,
-                ));
+                let limit = graph
+                    .node_data(current_node.into_bidirected())
+                    .len()
+                    .into_offset();
+                path.push(PathElement::new_inverted(predecessor, offset, limit, graph));
                 current_node = predecessor;
             }
 
-            // Adjust offset from source node.
-            let mut remaining_offset = source.offset();
-            for path_element in path.iter_mut().rev() {
-                remaining_offset = path_element.decrease_limit(remaining_offset);
-                if remaining_offset.into_raw().is_zero() {
-                    break;
-                }
+            // Adjust the offset of the source node.
+            if is_circular_special_case {
+                // If target is before source in the same node, then we have to manually add the source node as we started the search from its successors.
+                path.push(PathElement::new_inverted(
+                    source.node(),
+                    source.offset(),
+                    graph
+                        .node_data(source.node().into_bidirected())
+                        .len()
+                        .into_offset(),
+                    graph,
+                ));
+            } else {
+                path.last_mut().unwrap().decrease_limit(source.offset());
             }
-            assert!(
-                remaining_offset.into_raw().is_zero(),
-                "Found a path of negative length.",
-            );
 
             // Return path.
             return Some(GfaPath::new(path, cost));
@@ -103,15 +144,17 @@ pub fn shortest_path<IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDa
 
         // Expand node.
         for outgoing_edge in graph.iter_outgoing_edges(open_node.node) {
+            debug_assert_eq!(
+                graph
+                    .directed_edge_data(outgoing_edge.index())
+                    .data()
+                    .overlap(),
+                0,
+                "Only GFA graphs with blunt-ended (i.e. zero overlap) edges are supported. Use for example https://github.com/vgteam/GetBlunted to bluntify your graph.",
+            );
+
             let node = outgoing_edge.to();
-            let cost = open_node.cost + graph.node_data(open_node.node.into_bidirected()).len()
-                - GfaPathLength::from_usize(
-                    graph
-                        .directed_edge_data(outgoing_edge.index())
-                        .data()
-                        .overlap()
-                        .into(),
-                );
+            let cost = open_node.cost + graph.node_data(open_node.node.into_bidirected()).len();
             let predecessor = open_node.node.into();
 
             if let Some(closed_node) = closed_list.get(&node) {
