@@ -5,7 +5,7 @@ use bidirected_adjacency_array::{
 };
 
 use crate::{
-    dijkstra::shortest_path,
+    dijkstra::gfa_shortest_path,
     location::GfaLocation,
     path::{GfaPath, PathElement},
 };
@@ -30,7 +30,7 @@ fn test_simple_tight_source() {
     let graph =
         BidirectedAdjacencyArray::<u8, _, _>::new(nodes.into(), FromIterator::from_iter(edges));
 
-    let path = shortest_path(
+    let path = gfa_shortest_path(
         &graph,
         GfaLocation::new(0.into(), 3.into()),
         GfaLocation::new(8.into(), 2.into()),
@@ -73,7 +73,7 @@ fn test_simple_tight_target() {
     let graph =
         BidirectedAdjacencyArray::<u8, _, _>::new(nodes.into(), FromIterator::from_iter(edges));
 
-    let path = shortest_path(
+    let path = gfa_shortest_path(
         &graph,
         GfaLocation::new(0.into(), 2.into()),
         GfaLocation::new(8.into(), 0.into()),
@@ -116,7 +116,7 @@ fn test_simple_tight_source_and_target() {
     let graph =
         BidirectedAdjacencyArray::<u8, _, _>::new(nodes.into(), FromIterator::from_iter(edges));
 
-    let path = shortest_path(
+    let path = gfa_shortest_path(
         &graph,
         GfaLocation::new(0.into(), 3.into()),
         GfaLocation::new(8.into(), 0.into()),
@@ -156,7 +156,7 @@ fn test_cycle() {
     let graph =
         BidirectedAdjacencyArray::<u8, _, _>::new(nodes.into(), FromIterator::from_iter(edges));
 
-    let path = shortest_path(
+    let path = gfa_shortest_path(
         &graph,
         GfaLocation::new(0.into(), 3.into()),
         GfaLocation::new(0.into(), 0.into()),
@@ -192,7 +192,7 @@ fn test_internal_path() {
     let graph =
         BidirectedAdjacencyArray::<u8, _, _>::new(nodes.into(), FromIterator::from_iter(edges));
 
-    let path = shortest_path(
+    let path = gfa_shortest_path(
         &graph,
         GfaLocation::new(0.into(), 1.into()),
         GfaLocation::new(0.into(), 3.into()),
@@ -223,7 +223,7 @@ fn test_self_loop_external() {
     let graph =
         BidirectedAdjacencyArray::<u8, _, _>::new(nodes.into(), FromIterator::from_iter(edges));
 
-    let path = shortest_path(
+    let path = gfa_shortest_path(
         &graph,
         GfaLocation::new(0.into(), 4.into()),
         GfaLocation::new(0.into(), 2.into()),

@@ -10,9 +10,9 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "bidirected-adjacency-array"
-version = "0.2.2"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1eec737e9b0de42cbe3841b8fac49bc9df768f21732ad550e5e565ab57518261"
+checksum = "3fd1ae968c13fae688a1b6a4f01d262c6a99a289751e1e79a567a88404bffb07"
 dependencies = [
  "log",
  "num-traits",
@@ -93,13 +93,14 @@ dependencies = [
  "num-traits",
  "optional-numeric-index",
  "spqr-tree",
+ "tagged-vec",
 ]
 
 [[package]]
 name = "spqr-tree"
-version = "0.2.0"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c79040ced96fca26c9afc2e831676612f4d5f9cd3cb28a02f9f2085a52fa59e"
+checksum = "92404d3e81f2a2f26c197791c997f11f24eaddb20afceececa67ced258d00f99"
 dependencies = [
  "bidirected-adjacency-array",
  "num-traits",

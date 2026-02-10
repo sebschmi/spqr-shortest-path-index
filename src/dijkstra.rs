@@ -10,7 +10,8 @@ use binary_heap_plus::BinaryHeap;
 use crate::{
     gfa_graph_extensions::GfaNodeDataExt,
     location::{GfaLocation, GfaNodeOffset},
-    path::{GfaPath, GfaPathLength, PathElement},
+    path::{GfaPath, GfaPathLength, OptionalGfaPathLength, PathElement},
+    spqr_decomposition_overlay::OverlayEdgeData,
 };
 
 #[cfg(test)]
@@ -31,7 +32,11 @@ struct ClosedNode<IndexType> {
 /// Compute the shortest path between two sequence indices in two (possibly equal) GFA nodes.
 ///
 /// If `target` is before `source` in the same node, then the path will be a cycle.
-pub fn shortest_path<IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaEdgeData>(
+pub fn gfa_shortest_path<
+    IndexType: GraphIndexInteger,
+    NodeData: GfaNodeData,
+    EdgeData: GfaEdgeData,
+>(
     graph: &BidirectedAdjacencyArray<IndexType, NodeData, EdgeData>,
     source: GfaLocation<IndexType>,
     target: GfaLocation<IndexType>,
@@ -171,6 +176,14 @@ pub fn shortest_path<IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDa
 
     // Terminated without finding the target.
     None
+}
+
+pub fn overlay_shortest_path_length<IndexType: GraphIndexInteger, NodeData>(
+    _graph: &BidirectedAdjacencyArray<IndexType, NodeData, OverlayEdgeData<IndexType>>,
+    _source: DirectedNodeIndex<IndexType>,
+    _target: DirectedNodeIndex<IndexType>,
+) -> OptionalGfaPathLength<IndexType> {
+    todo!()
 }
 
 impl<IndexType: GraphIndexInteger> OpenNode<IndexType> {
