@@ -9,7 +9,10 @@ use spqr_tree::decomposition::SPQRDecomposition;
 use tagged_vec::TaggedVec;
 
 use crate::{
-    dijkstra::{gfa::gfa_shortest_path, overlay::overlay_shortest_path_length},
+    dijkstra::{
+        gfa::GfaDijkstra, gfa_location_index::single::SingleGfaLocationIndex,
+        overlay::overlay_shortest_path_length,
+    },
     location::GfaLocation,
     path::{GfaPathLength, OptionalGfaPathLength},
 };
@@ -63,6 +66,7 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
             OptionalNodeIndex::new_none(),
             graph.node_count(),
         ));
+        let mut dijkstra = GfaDijkstra::new(graph);
 
         // Create nodes.
         for node_index in graph.iter_nodes() {
@@ -123,7 +127,7 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
                             Self::create_overlay_edges_between(
                                 from_node_index,
                                 to_node_index,
-                                graph,
+                                &mut dijkstra,
                                 &graph_to_overlay_node_map,
                                 &mut edges,
                             );
@@ -149,7 +153,7 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
                         Self::create_overlay_edges_between(
                             from_node_index,
                             to_node_index,
-                            graph,
+                            &mut dijkstra,
                             &graph_to_overlay_node_map,
                             &mut edges,
                         );
@@ -170,7 +174,7 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
     fn create_overlay_edges_between(
         from_node_index: NodeIndex<IndexType>,
         to_node_index: NodeIndex<IndexType>,
-        graph: &BidirectedAdjacencyArray<IndexType, NodeData, EdgeData>,
+        dijkstra: &mut GfaDijkstra<IndexType, NodeData, EdgeData>,
         graph_to_overlay_node_map: &impl std::ops::Index<
             NodeIndex<IndexType>,
             Output = OptionalNodeIndex<IndexType>,
@@ -182,12 +186,17 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
         let to_overlay_index = graph_to_overlay_node_map[to_node_index]
             .expect("Both nodes must have an overlay node.");
 
-        if let Some(shortest_path_length_plus_plus) = gfa_shortest_path(
-            graph,
-            GfaLocation::new(from_node_index.into_directed_forward(), 0.into()),
-            GfaLocation::new(to_node_index.into_directed_forward(), 0.into()),
-        )
-        .map(|path| path.length())
+        if let Some(shortest_path_length_plus_plus) = dijkstra
+            .shortest_path(
+                GfaLocation::new(from_node_index.into_directed_forward(), 0.into()),
+                &SingleGfaLocationIndex::new_target(GfaLocation::new(
+                    to_node_index.into_directed_forward(),
+                    0.into(),
+                )),
+            )
+            .iter()
+            .map(|path| path.length())
+            .next()
         {
             edges.extend(std::iter::once(BidirectedEdge::new(
                 from_overlay_index.into_directed_forward(),
@@ -198,12 +207,17 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
             )));
         }
 
-        if let Some(shortest_path_length_plus_minus) = gfa_shortest_path(
-            graph,
-            GfaLocation::new(from_node_index.into_directed_forward(), 0.into()),
-            GfaLocation::new(to_node_index.into_directed_reverse(), 0.into()),
-        )
-        .map(|path| path.length())
+        if let Some(shortest_path_length_plus_minus) = dijkstra
+            .shortest_path(
+                GfaLocation::new(from_node_index.into_directed_forward(), 0.into()),
+                &SingleGfaLocationIndex::new_target(GfaLocation::new(
+                    to_node_index.into_directed_reverse(),
+                    0.into(),
+                )),
+            )
+            .iter()
+            .map(|path| path.length())
+            .next()
         {
             edges.extend(std::iter::once(BidirectedEdge::new(
                 from_overlay_index.into_directed_forward(),
@@ -214,12 +228,17 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
             )));
         }
 
-        if let Some(shortest_path_length_minus_plus) = gfa_shortest_path(
-            graph,
-            GfaLocation::new(from_node_index.into_directed_reverse(), 0.into()),
-            GfaLocation::new(to_node_index.into_directed_forward(), 0.into()),
-        )
-        .map(|path| path.length())
+        if let Some(shortest_path_length_minus_plus) = dijkstra
+            .shortest_path(
+                GfaLocation::new(from_node_index.into_directed_reverse(), 0.into()),
+                &SingleGfaLocationIndex::new_target(GfaLocation::new(
+                    to_node_index.into_directed_forward(),
+                    0.into(),
+                )),
+            )
+            .iter()
+            .map(|path| path.length())
+            .next()
         {
             edges.extend(std::iter::once(BidirectedEdge::new(
                 from_overlay_index.into_directed_reverse(),
@@ -230,12 +249,17 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
             )));
         }
 
-        if let Some(shortest_path_length_minus_minus) = gfa_shortest_path(
-            graph,
-            GfaLocation::new(from_node_index.into_directed_reverse(), 0.into()),
-            GfaLocation::new(to_node_index.into_directed_reverse(), 0.into()),
-        )
-        .map(|path| path.length())
+        if let Some(shortest_path_length_minus_minus) = dijkstra
+            .shortest_path(
+                GfaLocation::new(from_node_index.into_directed_reverse(), 0.into()),
+                &SingleGfaLocationIndex::new_target(GfaLocation::new(
+                    to_node_index.into_directed_reverse(),
+                    0.into(),
+                )),
+            )
+            .iter()
+            .map(|path| path.length())
+            .next()
         {
             edges.extend(std::iter::once(BidirectedEdge::new(
                 from_overlay_index.into_directed_reverse(),

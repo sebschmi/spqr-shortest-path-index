@@ -1,17 +1,33 @@
-use std::collections::HashMap;
-
 use bidirected_adjacency_array::{
     graph::BidirectedAdjacencyArray,
     index::{DirectedNodeIndex, GraphIndexInteger, OptionalDirectedNodeIndex},
     io::gfa1::{GfaEdgeData, GfaNodeData},
 };
-use binary_heap_plus::BinaryHeap;
+use binary_heap_plus::{BinaryHeap, MinComparator};
+use epoch_reset_array::EpochResetArray;
 
 use crate::{
+    dijkstra::gfa_location_index::GfaLocationIndex,
     gfa_graph_extensions::GfaNodeDataExt,
     location::{GfaLocation, GfaNodeOffset},
-    path::{GfaPath, GfaPathLength, PathElement},
+    path::{GfaPath, GfaPathLength, OptionalGfaPathLength, PathElement},
 };
+
+pub struct GfaShortestPathSource<IndexType> {
+    location: GfaLocation<IndexType>,
+    cost: GfaPathLength<IndexType>,
+}
+
+pub struct GfaDijkstra<
+    'graph,
+    IndexType: GraphIndexInteger,
+    NodeData: GfaNodeData,
+    EdgeData: GfaEdgeData,
+> {
+    graph: &'graph BidirectedAdjacencyArray<IndexType, NodeData, EdgeData>,
+    open_list: BinaryHeap<OpenNode<IndexType>, MinComparator>,
+    closed_list: EpochResetArray<DirectedNodeIndex<IndexType>, ClosedNode<IndexType>, u32>,
+}
 
 #[derive(Debug, Eq, PartialEq)]
 struct OpenNode<IndexType: GraphIndexInteger> {
@@ -20,48 +36,49 @@ struct OpenNode<IndexType: GraphIndexInteger> {
     predecessor: OptionalDirectedNodeIndex<IndexType>,
 }
 
-struct ClosedNode<IndexType> {
-    cost: GfaPathLength<IndexType>,
+#[derive(Debug, Clone)]
+struct ClosedNode<IndexType: GraphIndexInteger> {
+    cost: OptionalGfaPathLength<IndexType>,
     predecessor: OptionalDirectedNodeIndex<IndexType>,
 }
 
-/// Compute the shortest path between two sequence indices in two (possibly equal) GFA nodes.
-///
-/// If `target` is before `source` in the same node, then the path will be a cycle.
-pub fn gfa_shortest_path<
-    IndexType: GraphIndexInteger,
-    NodeData: GfaNodeData,
-    EdgeData: GfaEdgeData,
->(
-    graph: &BidirectedAdjacencyArray<IndexType, NodeData, EdgeData>,
-    source: GfaLocation<IndexType>,
-    target: GfaLocation<IndexType>,
-) -> Option<GfaPath<IndexType>> {
-    if source.node() == target.node() && source.offset() <= target.offset() {
-        // If source is before or at target in the same node, then the shortest path is within the node (because we assume edges to be blunt-ended).
-        return Some(GfaPath::new(
-            vec![PathElement::new(
-                source.node(),
-                source.offset(),
-                target.offset(),
-            )],
-            target.offset() - source.offset(),
-        ));
+impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaEdgeData>
+    GfaDijkstra<'graph, IndexType, NodeData, EdgeData>
+{
+    pub fn new(graph: &'graph BidirectedAdjacencyArray<IndexType, NodeData, EdgeData>) -> Self {
+        let directed_node_count = graph.node_count() * 2;
+        Self {
+            graph,
+            open_list: BinaryHeap::new_min(),
+            closed_list: EpochResetArray::new(
+                ClosedNode {
+                    cost: OptionalGfaPathLength::new_none(),
+                    predecessor: OptionalDirectedNodeIndex::new_none(),
+                },
+                directed_node_count.into(),
+            ),
+        }
     }
 
-    // We search in reverse such that we don't need to invert the path after backtracking.
-    let (source, target) = (target.invert(graph), source.invert(graph));
+    /// Compute the shortest paths from the source to all given targets.
+    ///
+    /// If there is a target that is before the source in the same node, then this target's path may be a cycle.
+    pub fn shortest_path(
+        &mut self,
+        source: GfaLocation<IndexType>,
+        targets: &impl GfaLocationIndex<IndexType>,
+    ) -> Vec<GfaPath<IndexType>> {
+        assert!(targets.is_targets());
 
-    let mut open_list = BinaryHeap::new_min();
-    let mut closed_list = HashMap::<DirectedNodeIndex<IndexType>, ClosedNode<IndexType>>::new();
-    let is_circular_special_case =
-        source.node() == target.node() && source.offset() > target.offset();
+        self.open_list.clear();
+        self.closed_list.reset();
 
-    if is_circular_special_case {
-        // If target is before source in the same node, then we have to expand the source manually, because Dijkstra's algorithm does not support circular paths.
-        for outgoing_edge in graph.iter_outgoing_edges(source.node()) {
+        // By convention, we insert only the successors of the source node into the open list.
+        // Therefore, each path will have one "missing" node at the start which we will handle separately when backtracking.
+        // This is to enable circular paths in the case where the shortest path to a target starts from the same node but with a higher offset.
+        for outgoing_edge in self.graph.iter_outgoing_edges(source.node()) {
             debug_assert_eq!(
-                graph
+                self.graph
                     .directed_edge_data(outgoing_edge.index())
                     .data()
                     .overlap(),
@@ -70,117 +87,138 @@ pub fn gfa_shortest_path<
             );
 
             let node = outgoing_edge.to();
-            let cost = graph.node_data(source.node().into_bidirected()).len();
+            let cost = self.graph.node_data(source.node().into_bidirected()).len()
+                - source.offset().into_length();
             let predecessor = OptionalDirectedNodeIndex::new_none();
 
-            open_list.push(OpenNode {
+            self.open_list.push(OpenNode {
                 node,
                 cost,
                 predecessor,
             });
         }
-    } else {
-        open_list.push(OpenNode::new_root(source.node()));
-    }
 
-    while let Some(open_node) = open_list.pop() {
-        // Close node.
-        closed_list.insert(
-            open_node.node,
-            ClosedNode {
-                cost: open_node.cost,
-                predecessor: open_node.predecessor,
-            },
-        );
+        let mut closed_target_counter = 0;
 
-        if open_node.node == target.node() {
-            // Target found, backtrack path and compute actual cost.
-            let cost =
-                open_node.cost + target.offset().into_length() - source.offset().into_length();
-
-            // Initialise path with target node.
-            let mut path = vec![PathElement::new_inverted(
-                target.node(),
-                GfaNodeOffset::from_usize(0),
-                target.offset(),
-                graph,
-            )];
-
-            // Collect nodes.
-            let mut current_node = open_node.node;
-            while let Some(predecessor) = closed_list
-                .get(&current_node)
-                .unwrap()
-                .predecessor
-                .into_option()
-            {
-                let offset = GfaNodeOffset::from_usize(0);
-                let limit = graph
-                    .node_data(current_node.into_bidirected())
-                    .len()
-                    .into_offset();
-                path.push(PathElement::new_inverted(predecessor, offset, limit, graph));
-                current_node = predecessor;
-            }
-
-            // Adjust the offset of the source node.
-            if is_circular_special_case {
-                // If target is before source in the same node, then we have to manually add the source node as we started the search from its successors.
-                path.push(PathElement::new_inverted(
-                    source.node(),
-                    source.offset(),
-                    graph
-                        .node_data(source.node().into_bidirected())
-                        .len()
-                        .into_offset(),
-                    graph,
-                ));
-            } else {
-                path.last_mut().unwrap().decrease_limit(source.offset());
-            }
-
-            // Return path.
-            return Some(GfaPath::new(path, cost));
-        }
-
-        // Expand node.
-        for outgoing_edge in graph.iter_outgoing_edges(open_node.node) {
-            debug_assert_eq!(
-                graph
-                    .directed_edge_data(outgoing_edge.index())
-                    .data()
-                    .overlap(),
-                0,
-                "Only GFA graphs with blunt-ended (i.e. zero overlap) edges are supported. Use for example https://github.com/vgteam/GetBlunted to bluntify your graph.",
+        while let Some(open_node) = self.open_list.pop()
+            && closed_target_counter < targets.len()
+        {
+            // Close node.
+            self.closed_list.set(
+                open_node.node,
+                ClosedNode {
+                    cost: open_node.cost.into(),
+                    predecessor: open_node.predecessor,
+                },
             );
 
-            let node = outgoing_edge.to();
-            let cost = open_node.cost + graph.node_data(open_node.node.into_bidirected()).len();
-            let predecessor = open_node.node.into();
+            if targets.contains(open_node.node) {
+                closed_target_counter += 1;
+            }
 
-            if let Some(closed_node) = closed_list.get(&node) {
-                assert!(cost >= closed_node.cost);
-            } else {
-                open_list.push(OpenNode {
-                    node,
-                    cost,
-                    predecessor,
-                });
+            // Expand node.
+            for outgoing_edge in self.graph.iter_outgoing_edges(open_node.node) {
+                debug_assert_eq!(
+                    self.graph
+                        .directed_edge_data(outgoing_edge.index())
+                        .data()
+                        .overlap(),
+                    0,
+                    "Only GFA graphs with blunt-ended (i.e. zero overlap) edges are supported. Use for example https://github.com/vgteam/GetBlunted to bluntify your graph.",
+                );
+
+                let node = outgoing_edge.to();
+                let cost =
+                    open_node.cost + self.graph.node_data(open_node.node.into_bidirected()).len();
+                let predecessor = open_node.node.into();
+
+                let closed_node = self.closed_list.get_mut(node);
+                if let Some(closed_cost) = closed_node.cost.into_option() {
+                    // Node already closed, ensure that we did not find a shorter path.
+                    assert!(closed_cost <= cost);
+                } else {
+                    self.open_list.push(OpenNode {
+                        node,
+                        cost,
+                        predecessor,
+                    });
+                }
             }
         }
+
+        // All targets found, backtrack paths and compute actual cost.
+        targets
+            .iter_targets()
+            .filter_map(|target| {
+                let mut path = (target.node() == source.node()
+                    && target.offset() >= source.offset())
+                .then(|| {
+                    GfaPath::new(
+                        vec![PathElement::new(
+                            source.node(),
+                            source.offset(),
+                            target.offset(),
+                        )],
+                        target.offset() - source.offset(),
+                    )
+                });
+
+                if let Some(cost) = self.closed_list.get(target.node()).cost.into_option() {
+                    let cost = cost + target.offset().into_length();
+                    let outer_path = self.backtrack_path(source, target, cost);
+                    if path
+                        .as_ref()
+                        .map(|p| outer_path.length() < p.length())
+                        .unwrap_or(true)
+                    {
+                        path = Some(outer_path);
+                    }
+                }
+
+                path
+            })
+            .collect()
     }
 
-    // Terminated without finding the target.
-    None
-}
+    fn backtrack_path(
+        &self,
+        source: GfaLocation<IndexType>,
+        target: GfaLocation<IndexType>,
+        cost: GfaPathLength<IndexType>,
+    ) -> GfaPath<IndexType> {
+        // Initialise path with target node.
+        let mut path = vec![PathElement::new(
+            target.node(),
+            GfaNodeOffset::from_usize(0),
+            target.offset(),
+        )];
 
-impl<IndexType: GraphIndexInteger> OpenNode<IndexType> {
-    fn new_root(node: DirectedNodeIndex<IndexType>) -> Self {
-        Self {
-            node,
-            cost: GfaPathLength::from_usize(0),
-            predecessor: OptionalDirectedNodeIndex::new_none(),
+        // Collect nodes.
+        let mut current_node = target.node();
+        while let Some(predecessor) = self.closed_list.get(current_node).predecessor.into_option() {
+            let offset = GfaNodeOffset::from_usize(0);
+            let limit = self
+                .graph
+                .node_data(current_node.into_bidirected())
+                .len()
+                .into_offset();
+            path.push(PathElement::new(predecessor, offset, limit));
+            current_node = predecessor;
         }
+
+        // Manually add the source node as we started the search from its successors.
+        path.push(PathElement::new(
+            source.node(),
+            source.offset(),
+            self.graph
+                .node_data(source.node().into_bidirected())
+                .len()
+                .into_offset(),
+        ));
+
+        // Return path.
+        path.reverse();
+        GfaPath::new(path, cost)
     }
 }
 
@@ -196,5 +234,35 @@ impl<IndexType: GraphIndexInteger> Ord for OpenNode<IndexType> {
 impl<IndexType: GraphIndexInteger> PartialOrd for OpenNode<IndexType> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+impl<IndexType: GraphIndexInteger> GfaShortestPathSource<IndexType> {
+    pub fn new(location: GfaLocation<IndexType>, cost: GfaPathLength<IndexType>) -> Self {
+        if cost != GfaPathLength::from_usize(0) {
+            assert_eq!(
+                location.offset(),
+                GfaNodeOffset::from_usize(0),
+                "If the path starts in the middle of a node, "
+            );
+        }
+
+        Self { location, cost }
+    }
+
+    pub fn location(&self) -> GfaLocation<IndexType> {
+        self.location
+    }
+
+    pub fn node(&self) -> DirectedNodeIndex<IndexType> {
+        self.location.node()
+    }
+
+    pub fn offset(&self) -> GfaNodeOffset<IndexType> {
+        self.location.offset()
+    }
+
+    pub fn cost(&self) -> GfaPathLength<IndexType> {
+        self.cost
     }
 }

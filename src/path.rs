@@ -87,24 +87,6 @@ impl<IndexType: GraphIndexInteger> PathElement<IndexType> {
     pub fn length(&self) -> GfaPathLength<IndexType> {
         self.limit - self.offset
     }
-
-    /// Push the path element to the left by the given decrement.
-    ///
-    /// The decrement is subtracted from the limit, and the offset is adjusted to not exceed the new limit.
-    /// The amount of shift applied to the offset is returned.
-    pub(crate) fn decrease_limit(
-        &mut self,
-        decrement: GfaNodeOffset<IndexType>,
-    ) -> GfaNodeOffset<IndexType> {
-        self.limit -= decrement;
-        if self.offset > self.limit {
-            let shift = self.offset - self.limit;
-            self.offset = self.limit;
-            shift.into_offset()
-        } else {
-            GfaNodeOffset::from_usize(0)
-        }
-    }
 }
 
 impl<IndexType: GraphIndexInteger> Sub for GfaNodeOffset<IndexType> {

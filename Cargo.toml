@@ -9,11 +9,11 @@ repository = "https://github.com/sebschmi/spqr-shortest-path-index"
 edition = "2024"
 
 [dependencies]
-spqr-tree = { version = "0.2.2", features = [
-    "bidirected-adjacency-array",
-] }
+spqr-tree = { version = "0.2.2", features = ["bidirected-adjacency-array"] }
 bidirected-adjacency-array = { version = "0.2.4" }
 optional-numeric-index = "0.3.4"
 num-traits = "0.2.19"
 binary-heap-plus = "0.5.0"
 tagged-vec = "0.4.1"
+bitvec = "1.0.1"
+epoch-reset-array = "0.1.0"
