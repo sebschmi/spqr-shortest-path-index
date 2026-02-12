@@ -5,7 +5,7 @@ use bidirected_adjacency_array::{
 };
 
 use crate::{
-    dijkstra::gfa_shortest_path,
+    dijkstra::gfa::gfa_shortest_path,
     location::GfaLocation,
     path::{GfaPath, PathElement},
 };

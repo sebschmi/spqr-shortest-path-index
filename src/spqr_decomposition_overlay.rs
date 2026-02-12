@@ -9,7 +9,7 @@ use spqr_tree::decomposition::SPQRDecomposition;
 use tagged_vec::TaggedVec;
 
 use crate::{
-    dijkstra::{gfa_shortest_path, overlay_shortest_path_length},
+    dijkstra::{gfa::gfa_shortest_path, overlay::overlay_shortest_path_length},
     location::GfaLocation,
     path::{GfaPathLength, OptionalGfaPathLength},
 };
