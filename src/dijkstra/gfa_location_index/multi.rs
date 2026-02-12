@@ -108,7 +108,6 @@ impl<IndexType: GraphIndexInteger> GfaLocationIndex<IndexType>
             .expect("Node is not contained in the index")
     }
 
-    /// Always panics if the index was not created with the [`Self::new_sources`] constructor.
     fn cost(&self, node: DirectedNodeIndex<IndexType>) -> GfaPathLength<IndexType> {
         self.costs
             .get(&node)

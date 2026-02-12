@@ -55,7 +55,6 @@ impl<IndexType: GraphIndexInteger> GfaLocationIndex<IndexType>
         self.location.offset()
     }
 
-    /// Always panics if the index was not created with the [`Self::new_sources`] constructor.
     fn cost(&self, node: DirectedNodeIndex<IndexType>) -> GfaPathLength<IndexType> {
         assert!(self.contains(node), "Node is not a source");
         self.costs.into_option().expect("Locations are not sources")
