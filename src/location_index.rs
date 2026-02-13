@@ -1,7 +1,7 @@
 use bidirected_adjacency_array::index::DirectedNodeIndex;
 
 use crate::{
-    dijkstra::gfa::GfaShortestPathSource,
+    dijkstra::GfaShortestPathSource,
     location::{GfaLocation, GfaNodeOffset},
     path::GfaPathLength,
 };

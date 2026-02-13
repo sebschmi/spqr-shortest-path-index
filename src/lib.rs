@@ -12,3 +12,6 @@ pub mod spqr_decomposition_overlay;
 
 /// Extension traits for GFA graphs.
 pub mod gfa_graph_extensions;
+
+/// An index for [`GfaLocation`](crate::location::GfaLocation)s to indicate sources and targets in shortest path algorithms.
+pub mod location_index;

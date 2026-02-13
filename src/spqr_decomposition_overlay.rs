@@ -1,7 +1,7 @@
 use std::{collections::HashSet, iter};
 
 use bidirected_adjacency_array::{
-    graph::{BidirectedAdjacencyArray, BidirectedEdge},
+    graph::{BidirectedAdjacencyArray, BidirectedEdge, DirectedEdge},
     index::{DirectedNodeIndex, GraphIndexInteger, NodeIndex, OptionalNodeIndex},
     io::gfa1::{GfaEdgeData, GfaNodeData},
 };
@@ -9,14 +9,11 @@ use spqr_tree::decomposition::SPQRDecomposition;
 use tagged_vec::TaggedVec;
 
 use crate::{
-    dijkstra::{
-        gfa::GfaDijkstra, gfa_location_index::single::SingleGfaLocationIndex,
-        overlay::overlay_shortest_path_length,
-    },
-    location::GfaLocation,
-    path::{GfaPathLength, OptionalGfaPathLength},
+    dijkstra::GfaDijkstra, location::GfaLocation, location_index::single::SingleGfaLocationIndex,
+    path::GfaPathLength,
 };
 
+#[expect(dead_code)]
 pub struct SPQRDecompositionOverlay<
     'graph,
     'spqr,
@@ -48,6 +45,12 @@ pub struct OverlayNodeData<IndexType> {
 pub struct OverlayEdgeData<IndexType> {
     /// Length of the shortest path between the offsets zero on both nodes in the original graph.
     length: GfaPathLength<IndexType>,
+}
+
+pub enum OverlayLevel {
+    BlockCutTree,
+    SPQRTree,
+    SPQRNode,
 }
 
 impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaEdgeData>
@@ -282,21 +285,16 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
         self.spqr_decomposition
     }
 
-    pub fn overlay_shortest_path_length(
+    pub fn iter_outgoing_edges(
         &self,
-        from: DirectedNodeIndex<IndexType>,
-        to: DirectedNodeIndex<IndexType>,
-    ) -> OptionalGfaPathLength<IndexType> {
-        let from = from.with_bidirected_node_index(
-            self.graph_to_overlay_node_map[from.into_bidirected()]
-                .expect("The from node must have an overlay node."),
-        );
-        let to = to.with_bidirected_node_index(
-            self.graph_to_overlay_node_map[to.into_bidirected()]
-                .expect("The to node must have an overlay node."),
-        );
-
-        overlay_shortest_path_length(&self.overlay, from, to)
+        node: DirectedNodeIndex<IndexType>,
+        overlay_level: OverlayLevel,
+    ) -> impl Iterator<Item = DirectedEdge<IndexType>> {
+        match overlay_level {
+            OverlayLevel::BlockCutTree => todo!(),
+            OverlayLevel::SPQRTree => todo!(),
+            OverlayLevel::SPQRNode => self.graph.iter_outgoing_edges(node),
+        }
     }
 }
 

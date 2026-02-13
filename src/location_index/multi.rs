@@ -7,11 +7,9 @@ use bidirected_adjacency_array::{
 use bitvec::{bitvec, vec::BitVec};
 
 use crate::{
-    dijkstra::{
-        gfa::GfaShortestPathSource,
-        gfa_location_index::{GfaLocationIndex, GfaLocationIndexKind},
-    },
+    dijkstra::GfaShortestPathSource,
     location::{GfaLocation, GfaNodeOffset},
+    location_index::{GfaLocationIndex, GfaLocationIndexKind},
     path::GfaPathLength,
 };
 

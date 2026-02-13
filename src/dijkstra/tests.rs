@@ -5,8 +5,9 @@ use bidirected_adjacency_array::{
 };
 
 use crate::{
-    dijkstra::{gfa::GfaDijkstra, gfa_location_index::single::SingleGfaLocationIndex},
+    dijkstra::GfaDijkstra,
     location::GfaLocation,
+    location_index::single::SingleGfaLocationIndex,
     path::{GfaPath, PathElement},
 };
 

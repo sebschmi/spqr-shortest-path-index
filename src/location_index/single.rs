@@ -3,11 +3,9 @@ use std::iter;
 use bidirected_adjacency_array::index::{DirectedNodeIndex, GraphIndexInteger};
 
 use crate::{
-    dijkstra::{
-        gfa::GfaShortestPathSource,
-        gfa_location_index::{GfaLocationIndex, GfaLocationIndexKind},
-    },
+    dijkstra::GfaShortestPathSource,
     location::{GfaLocation, GfaNodeOffset},
+    location_index::{GfaLocationIndex, GfaLocationIndexKind},
     path::{GfaPathLength, OptionalGfaPathLength},
 };
 
