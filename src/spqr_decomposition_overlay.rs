@@ -2,7 +2,10 @@ use std::{collections::HashSet, iter};
 
 use bidirected_adjacency_array::{
     graph::{BidirectedAdjacencyArray, BidirectedEdge, DirectedEdge},
-    index::{DirectedNodeIndex, GraphIndexInteger, NodeIndex, OptionalNodeIndex},
+    index::{
+        DirectedEdgeIndex, DirectedNodeIndex, GraphIndexInteger, NodeIndex,
+        OptionalDirectedNodeIndex, OptionalNodeIndex,
+    },
     io::gfa1::{GfaEdgeData, GfaNodeData},
 };
 use spqr_tree::decomposition::SPQRDecomposition;
@@ -13,7 +16,8 @@ use crate::{
     path::GfaPathLength,
 };
 
-#[expect(dead_code)]
+pub mod dijkstra;
+
 pub struct SPQRDecompositionOverlay<
     'graph,
     'spqr,
@@ -34,6 +38,12 @@ pub struct SPQRDecompositionOverlay<
     overlay:
         BidirectedAdjacencyArray<IndexType, OverlayNodeData<IndexType>, OverlayEdgeData<IndexType>>,
 
+    /// The overlay graph stores edges for the BC tree and SPQR tree overlays together.
+    /// First, it stores the SPQR tree edges, and afterwards the BC tree edges.
+    /// This vector stores the offsets of the BC tree edges, so that they can be distinguished from the BC tree edges.
+    block_cut_overlay_edge_offsets:
+        TaggedVec<DirectedNodeIndex<IndexType>, DirectedEdgeIndex<IndexType>>,
+
     /// Maps node indices in the original graph to node indices in the overlay graph, if they exist.
     graph_to_overlay_node_map: TaggedVec<NodeIndex<IndexType>, OptionalNodeIndex<IndexType>>,
 }
@@ -47,10 +57,11 @@ pub struct OverlayEdgeData<IndexType> {
     length: GfaPathLength<IndexType>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum OverlayLevel {
-    BlockCutTree,
-    SPQRTree,
     SPQRNode,
+    SPQRTree,
+    BlockCutTree,
 }
 
 impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaEdgeData>
@@ -83,6 +94,11 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
                     OptionalNodeIndex::from_usize(nodes.len() - 1);
             }
         }
+
+        let mut block_cut_overlay_edge_offsets = TaggedVec::from_iter(iter::repeat_n(
+            DirectedEdgeIndex::from_usize(0),
+            nodes.len(),
+        ));
 
         // Create edges for each SPQR node.
         for component_index in spqr_decomposition.iter_component_indices() {
@@ -132,6 +148,7 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
                                 to_node_index,
                                 &mut dijkstra,
                                 &graph_to_overlay_node_map,
+                                Some(&mut block_cut_overlay_edge_offsets),
                                 &mut edges,
                             );
                         }
@@ -158,6 +175,7 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
                             to_node_index,
                             &mut dijkstra,
                             &graph_to_overlay_node_map,
+                            None,
                             &mut edges,
                         );
                     }
@@ -165,10 +183,13 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
             }
         }
 
+        let overlay = BidirectedAdjacencyArray::new(nodes, edges);
+
         Self {
             graph,
             spqr_decomposition,
-            overlay: BidirectedAdjacencyArray::new(nodes, edges),
+            overlay,
+            block_cut_overlay_edge_offsets,
             graph_to_overlay_node_map,
         }
     }
@@ -182,6 +203,9 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
             NodeIndex<IndexType>,
             Output = OptionalNodeIndex<IndexType>,
         >,
+        mut block_cut_overlay_edge_offsets: Option<
+            &mut TaggedVec<DirectedNodeIndex<IndexType>, DirectedEdgeIndex<IndexType>>,
+        >,
         edges: &mut impl Extend<BidirectedEdge<IndexType, OverlayEdgeData<IndexType>>>,
     ) {
         let from_overlay_index = graph_to_overlay_node_map[from_node_index]
@@ -190,7 +214,7 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
             .expect("Both nodes must have an overlay node.");
 
         if let Some(shortest_path_length_plus_plus) = dijkstra
-            .shortest_path(
+            .shortest_paths(
                 GfaLocation::new(from_node_index.into_directed_forward(), 0.into()),
                 &SingleGfaLocationIndex::new_target(GfaLocation::new(
                     to_node_index.into_directed_forward(),
@@ -208,10 +232,25 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
                     length: shortest_path_length_plus_plus,
                 },
             )));
+
+            if let Some(block_cut_overlay_edge_offsets) = block_cut_overlay_edge_offsets.as_mut() {
+                block_cut_overlay_edge_offsets[from_overlay_index.into_directed_forward()] =
+                    DirectedEdgeIndex::from_usize(
+                        block_cut_overlay_edge_offsets[from_overlay_index.into_directed_forward()]
+                            .into_usize()
+                            + 1,
+                    );
+                block_cut_overlay_edge_offsets[to_overlay_index.into_directed_reverse()] =
+                    DirectedEdgeIndex::from_usize(
+                        block_cut_overlay_edge_offsets[to_overlay_index.into_directed_reverse()]
+                            .into_usize()
+                            + 1,
+                    );
+            }
         }
 
         if let Some(shortest_path_length_plus_minus) = dijkstra
-            .shortest_path(
+            .shortest_paths(
                 GfaLocation::new(from_node_index.into_directed_forward(), 0.into()),
                 &SingleGfaLocationIndex::new_target(GfaLocation::new(
                     to_node_index.into_directed_reverse(),
@@ -229,10 +268,25 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
                     length: shortest_path_length_plus_minus,
                 },
             )));
+
+            if let Some(block_cut_overlay_edge_offsets) = block_cut_overlay_edge_offsets.as_mut() {
+                block_cut_overlay_edge_offsets[from_overlay_index.into_directed_forward()] =
+                    DirectedEdgeIndex::from_usize(
+                        block_cut_overlay_edge_offsets[from_overlay_index.into_directed_forward()]
+                            .into_usize()
+                            + 1,
+                    );
+                block_cut_overlay_edge_offsets[to_overlay_index.into_directed_forward()] =
+                    DirectedEdgeIndex::from_usize(
+                        block_cut_overlay_edge_offsets[to_overlay_index.into_directed_forward()]
+                            .into_usize()
+                            + 1,
+                    );
+            }
         }
 
         if let Some(shortest_path_length_minus_plus) = dijkstra
-            .shortest_path(
+            .shortest_paths(
                 GfaLocation::new(from_node_index.into_directed_reverse(), 0.into()),
                 &SingleGfaLocationIndex::new_target(GfaLocation::new(
                     to_node_index.into_directed_forward(),
@@ -250,10 +304,25 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
                     length: shortest_path_length_minus_plus,
                 },
             )));
+
+            if let Some(block_cut_overlay_edge_offsets) = block_cut_overlay_edge_offsets.as_mut() {
+                block_cut_overlay_edge_offsets[from_overlay_index.into_directed_reverse()] =
+                    DirectedEdgeIndex::from_usize(
+                        block_cut_overlay_edge_offsets[from_overlay_index.into_directed_reverse()]
+                            .into_usize()
+                            + 1,
+                    );
+                block_cut_overlay_edge_offsets[to_overlay_index.into_directed_reverse()] =
+                    DirectedEdgeIndex::from_usize(
+                        block_cut_overlay_edge_offsets[to_overlay_index.into_directed_reverse()]
+                            .into_usize()
+                            + 1,
+                    );
+            }
         }
 
         if let Some(shortest_path_length_minus_minus) = dijkstra
-            .shortest_path(
+            .shortest_paths(
                 GfaLocation::new(from_node_index.into_directed_reverse(), 0.into()),
                 &SingleGfaLocationIndex::new_target(GfaLocation::new(
                     to_node_index.into_directed_reverse(),
@@ -271,6 +340,21 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
                     length: shortest_path_length_minus_minus,
                 },
             )));
+
+            if let Some(block_cut_overlay_edge_offsets) = block_cut_overlay_edge_offsets.as_mut() {
+                block_cut_overlay_edge_offsets[from_overlay_index.into_directed_reverse()] =
+                    DirectedEdgeIndex::from_usize(
+                        block_cut_overlay_edge_offsets[from_overlay_index.into_directed_reverse()]
+                            .into_usize()
+                            + 1,
+                    );
+                block_cut_overlay_edge_offsets[to_overlay_index.into_directed_forward()] =
+                    DirectedEdgeIndex::from_usize(
+                        block_cut_overlay_edge_offsets[to_overlay_index.into_directed_forward()]
+                            .into_usize()
+                            + 1,
+                    );
+            }
         }
     }
 
@@ -285,16 +369,81 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
         self.spqr_decomposition
     }
 
-    pub fn iter_outgoing_edges(
+    pub fn overlay(
         &self,
+    ) -> &BidirectedAdjacencyArray<IndexType, OverlayNodeData<IndexType>, OverlayEdgeData<IndexType>>
+    {
+        &self.overlay
+    }
+
+    pub fn graph_node_to_overlay_node(
+        &self,
+        node_index: NodeIndex<IndexType>,
+    ) -> OptionalNodeIndex<IndexType> {
+        self.graph_to_overlay_node_map[node_index]
+    }
+
+    pub fn overlay_node_to_graph_node(
+        &self,
+        overlay_node_index: NodeIndex<IndexType>,
+    ) -> NodeIndex<IndexType> {
+        self.overlay.node_data(overlay_node_index).original_node()
+    }
+
+    pub fn directed_graph_node_to_overlay_node(
+        &self,
+        node_index: DirectedNodeIndex<IndexType>,
+    ) -> OptionalDirectedNodeIndex<IndexType> {
+        self.graph_node_to_overlay_node(node_index.into_bidirected())
+            .into_option()
+            .map(|overlay_node_index| node_index.with_bidirected_node_index(overlay_node_index))
+            .into()
+    }
+
+    pub fn directed_overlay_node_to_graph_node(
+        &self,
+        overlay_node_index: DirectedNodeIndex<IndexType>,
+    ) -> DirectedNodeIndex<IndexType> {
+        let graph_node_index =
+            self.overlay_node_to_graph_node(overlay_node_index.into_bidirected());
+        overlay_node_index.with_bidirected_node_index(graph_node_index)
+    }
+
+    pub fn iter_outgoing_edges<'this>(
+        &'this self,
         node: DirectedNodeIndex<IndexType>,
         overlay_level: OverlayLevel,
-    ) -> impl Iterator<Item = DirectedEdge<IndexType>> {
+    ) -> Box<dyn 'this + Iterator<Item = DirectedEdge<IndexType>>> {
         match overlay_level {
-            OverlayLevel::BlockCutTree => todo!(),
-            OverlayLevel::SPQRTree => todo!(),
-            OverlayLevel::SPQRNode => self.graph.iter_outgoing_edges(node),
+            OverlayLevel::BlockCutTree => Box::new(self.iter_outgoing_block_cut_tree_edges(node)),
+            OverlayLevel::SPQRTree => Box::new(self.iter_outgoing_spqr_tree_edges(node)),
+            OverlayLevel::SPQRNode => Box::new(self.iter_outgoing_spqr_node_edges(node)),
         }
+    }
+
+    pub fn iter_outgoing_block_cut_tree_edges(
+        &self,
+        node: DirectedNodeIndex<IndexType>,
+    ) -> impl Iterator<Item = DirectedEdge<IndexType>> {
+        self.overlay
+            .iter_outgoing_edges(node)
+            .skip(self.block_cut_overlay_edge_offsets[node].into_usize())
+    }
+
+    pub fn iter_outgoing_spqr_tree_edges(
+        &self,
+        node: DirectedNodeIndex<IndexType>,
+    ) -> impl Iterator<Item = DirectedEdge<IndexType>> {
+        self.overlay
+            .iter_outgoing_edges(node)
+            .take(self.block_cut_overlay_edge_offsets[node].into_usize())
+    }
+
+    pub fn iter_outgoing_spqr_node_edges(
+        &self,
+        node: DirectedNodeIndex<IndexType>,
+    ) -> impl Iterator<Item = DirectedEdge<IndexType>> {
+        self.graph.iter_outgoing_edges(node)
     }
 }
 
@@ -307,5 +456,25 @@ impl<IndexType: GraphIndexInteger> OverlayNodeData<IndexType> {
 impl<IndexType: GraphIndexInteger> OverlayEdgeData<IndexType> {
     pub fn length(&self) -> GfaPathLength<IndexType> {
         self.length
+    }
+}
+
+impl PartialOrd for OverlayLevel {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for OverlayLevel {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match (self, other) {
+            (OverlayLevel::BlockCutTree, OverlayLevel::BlockCutTree)
+            | (OverlayLevel::SPQRTree, OverlayLevel::SPQRTree)
+            | (OverlayLevel::SPQRNode, OverlayLevel::SPQRNode) => std::cmp::Ordering::Equal,
+            (OverlayLevel::BlockCutTree, _) => std::cmp::Ordering::Greater,
+            (OverlayLevel::SPQRNode, _) => std::cmp::Ordering::Less,
+            (OverlayLevel::SPQRTree, OverlayLevel::BlockCutTree) => std::cmp::Ordering::Less,
+            (OverlayLevel::SPQRTree, OverlayLevel::SPQRNode) => std::cmp::Ordering::Greater,
+        }
     }
 }

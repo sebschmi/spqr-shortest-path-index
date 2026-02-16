@@ -133,9 +133,9 @@ dependencies = [
 
 [[package]]
 name = "spqr-tree"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92404d3e81f2a2f26c197791c997f11f24eaddb20afceececa67ced258d00f99"
+checksum = "a43d948360157df3a4f3a90dff2f0e24c41417155e250710f71cdc18a84fab5a"
 dependencies = [
  "bidirected-adjacency-array",
  "num-traits",
@@ -158,9 +158,9 @@ dependencies = [
 
 [[package]]
 name = "tagged-vec"
-version = "0.4.1"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9539384812cec88f2fe17a0febb4160573cd46ab70276d8c2347216ecf71926c"
+checksum = "68c8f4033bf8ef3fa9c6b8828385b687b0afe2601f6898c9d6f96806c8dd54ac"
 
 [[package]]
 name = "tap"

@@ -32,7 +32,7 @@ fn test_simple_tight_source() {
         BidirectedAdjacencyArray::<u8, _, _>::new(nodes.into(), FromIterator::from_iter(edges));
 
     let mut dijkstra = GfaDijkstra::new(&graph);
-    let paths = dijkstra.shortest_path(
+    let paths = dijkstra.shortest_paths(
         GfaLocation::new(0.into(), 3.into()),
         &SingleGfaLocationIndex::new_target(GfaLocation::new(8.into(), 2.into())),
     );
@@ -76,7 +76,7 @@ fn test_simple_tight_target() {
         BidirectedAdjacencyArray::<u8, _, _>::new(nodes.into(), FromIterator::from_iter(edges));
 
     let mut dijkstra = GfaDijkstra::new(&graph);
-    let paths = dijkstra.shortest_path(
+    let paths = dijkstra.shortest_paths(
         GfaLocation::new(0.into(), 2.into()),
         &SingleGfaLocationIndex::new_target(GfaLocation::new(8.into(), 0.into())),
     );
@@ -120,7 +120,7 @@ fn test_simple_tight_source_and_target() {
         BidirectedAdjacencyArray::<u8, _, _>::new(nodes.into(), FromIterator::from_iter(edges));
 
     let mut dijkstra = GfaDijkstra::new(&graph);
-    let paths = dijkstra.shortest_path(
+    let paths = dijkstra.shortest_paths(
         GfaLocation::new(0.into(), 3.into()),
         &SingleGfaLocationIndex::new_target(GfaLocation::new(8.into(), 0.into())),
     );
@@ -161,7 +161,7 @@ fn test_cycle() {
         BidirectedAdjacencyArray::<u8, _, _>::new(nodes.into(), FromIterator::from_iter(edges));
 
     let mut dijkstra = GfaDijkstra::new(&graph);
-    let paths = dijkstra.shortest_path(
+    let paths = dijkstra.shortest_paths(
         GfaLocation::new(0.into(), 3.into()),
         &SingleGfaLocationIndex::new_target(GfaLocation::new(0.into(), 0.into())),
     );
@@ -198,7 +198,7 @@ fn test_internal_path() {
         BidirectedAdjacencyArray::<u8, _, _>::new(nodes.into(), FromIterator::from_iter(edges));
 
     let mut dijkstra = GfaDijkstra::new(&graph);
-    let paths = dijkstra.shortest_path(
+    let paths = dijkstra.shortest_paths(
         GfaLocation::new(0.into(), 1.into()),
         &SingleGfaLocationIndex::new_target(GfaLocation::new(0.into(), 3.into())),
     );
@@ -230,7 +230,7 @@ fn test_internal_empty_path() {
         BidirectedAdjacencyArray::<u8, _, _>::new(nodes.into(), FromIterator::from_iter(edges));
 
     let mut dijkstra = GfaDijkstra::new(&graph);
-    let paths = dijkstra.shortest_path(
+    let paths = dijkstra.shortest_paths(
         GfaLocation::new(0.into(), 1.into()),
         &SingleGfaLocationIndex::new_target(GfaLocation::new(0.into(), 1.into())),
     );
@@ -262,7 +262,7 @@ fn test_self_loop_external() {
         BidirectedAdjacencyArray::<u8, _, _>::new(nodes.into(), FromIterator::from_iter(edges));
 
     let mut dijkstra = GfaDijkstra::new(&graph);
-    let paths = dijkstra.shortest_path(
+    let paths = dijkstra.shortest_paths(
         GfaLocation::new(0.into(), 4.into()),
         &SingleGfaLocationIndex::new_target(GfaLocation::new(0.into(), 2.into())),
     );

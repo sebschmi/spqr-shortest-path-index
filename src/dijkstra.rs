@@ -66,7 +66,7 @@ impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaE
     /// Compute the shortest paths from the source to all given targets.
     ///
     /// If there is a target that is before the source in the same node, then this target's path may be a cycle.
-    pub fn shortest_path(
+    pub fn shortest_paths(
         &mut self,
         source: GfaLocation<IndexType>,
         targets: &impl GfaLocationIndex<IndexType>,
@@ -135,7 +135,7 @@ impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaE
                     open_node.cost + self.graph.node_data(open_node.node.into_bidirected()).len();
                 let predecessor = open_node.node.into();
 
-                let closed_node = self.closed_list.get_mut(node);
+                let closed_node = self.closed_list.get(node);
                 if let Some(closed_cost) = closed_node.cost.into_option() {
                     // Node already closed, ensure that we did not find a shorter path.
                     assert!(closed_cost <= cost);
