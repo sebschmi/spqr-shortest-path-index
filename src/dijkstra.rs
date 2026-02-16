@@ -1,6 +1,3 @@
-#[cfg(test)]
-mod tests;
-
 use bidirected_adjacency_array::{
     graph::BidirectedAdjacencyArray,
     index::{DirectedNodeIndex, GraphIndexInteger, OptionalDirectedNodeIndex},
@@ -15,6 +12,9 @@ use crate::{
     location_index::GfaLocationIndex,
     path::{GfaPath, GfaPathLength, OptionalGfaPathLength, PathElement},
 };
+
+#[cfg(test)]
+mod tests;
 
 pub struct GfaShortestPathSource<IndexType> {
     location: GfaLocation<IndexType>,
@@ -83,7 +83,10 @@ impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaE
             source.node(),
             self.graph.node_data(source.node().into_bidirected()).len()
                 - source.offset().into_length(),
+            true,
         );
+
+        println!("{:?}", self.open_list);
 
         let mut closed_target_counter = 0;
 
@@ -107,6 +110,7 @@ impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaE
             self.expand_node(
                 open_node.node,
                 open_node.cost + self.graph.node_data(open_node.node.into_bidirected()).len(),
+                false,
             );
         }
 
@@ -148,6 +152,7 @@ impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaE
         &mut self,
         from_node: DirectedNodeIndex<IndexType>,
         from_cost: GfaPathLength<IndexType>,
+        is_source_node: bool,
     ) {
         for outgoing_edge in self.graph.iter_outgoing_edges(from_node) {
             debug_assert_eq!(
@@ -161,7 +166,11 @@ impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaE
 
             let to_node = outgoing_edge.to();
             let to_cost = from_cost;
-            let to_predecessor = from_node.into();
+            let to_predecessor = if is_source_node {
+                OptionalDirectedNodeIndex::new_none()
+            } else {
+                from_node.into()
+            };
 
             let closed_node = self.closed_list.get(to_node);
             if let Some(closed_cost) = closed_node.cost.into_option() {

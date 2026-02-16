@@ -147,6 +147,7 @@ impl<
             maximum_level,
             &active_blocks,
             &active_spqr_nodes,
+            true,
         );
         let mut closed_target_counter = 0;
 
@@ -173,6 +174,7 @@ impl<
                 maximum_level,
                 &active_blocks,
                 &active_spqr_nodes,
+                false,
             );
         }
 
@@ -224,6 +226,7 @@ impl<
         maximum_level: OverlayLevel,
         active_blocks: &HashSet<BlockIndex<IndexType>>,
         active_spqr_nodes: &HashSet<SPQRNodeIndex<IndexType>>,
+        is_source_node: bool,
     ) {
         if self
             .overlay
@@ -252,7 +255,11 @@ impl<
                         .directed_edge_data(outgoing_edge.index())
                         .data()
                         .length();
-                let predecessor = from_node.into();
+                let predecessor = if is_source_node {
+                    OptionalDirectedNodeIndex::new_none()
+                } else {
+                    from_node.into()
+                };
 
                 let closed_node = self.closed_list.get(to_node);
                 if let Some(closed_cost) = closed_node.cost.into_option() {
