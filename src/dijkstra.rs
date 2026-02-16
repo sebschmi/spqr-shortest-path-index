@@ -79,27 +79,11 @@ impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaE
         // By convention, we insert only the successors of the source node into the open list.
         // Therefore, each path will have one "missing" node at the start which we will handle separately when backtracking.
         // This is to enable circular paths in the case where the shortest path to a target starts from the same node but with a higher offset.
-        for outgoing_edge in self.graph.iter_outgoing_edges(source.node()) {
-            debug_assert_eq!(
-                self.graph
-                    .directed_edge_data(outgoing_edge.index())
-                    .data()
-                    .overlap(),
-                0,
-                "Only GFA graphs with blunt-ended (i.e. zero overlap) edges are supported. Use for example https://github.com/vgteam/GetBlunted to bluntify your graph.",
-            );
-
-            let node = outgoing_edge.to();
-            let cost = self.graph.node_data(source.node().into_bidirected()).len()
-                - source.offset().into_length();
-            let predecessor = OptionalDirectedNodeIndex::new_none();
-
-            self.open_list.push(OpenNode {
-                node,
-                cost,
-                predecessor,
-            });
-        }
+        self.expand_node(
+            source.node(),
+            self.graph.node_data(source.node().into_bidirected()).len()
+                - source.offset().into_length(),
+        );
 
         let mut closed_target_counter = 0;
 
@@ -120,33 +104,10 @@ impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaE
             }
 
             // Expand node.
-            for outgoing_edge in self.graph.iter_outgoing_edges(open_node.node) {
-                debug_assert_eq!(
-                    self.graph
-                        .directed_edge_data(outgoing_edge.index())
-                        .data()
-                        .overlap(),
-                    0,
-                    "Only GFA graphs with blunt-ended (i.e. zero overlap) edges are supported. Use for example https://github.com/vgteam/GetBlunted to bluntify your graph.",
-                );
-
-                let node = outgoing_edge.to();
-                let cost =
-                    open_node.cost + self.graph.node_data(open_node.node.into_bidirected()).len();
-                let predecessor = open_node.node.into();
-
-                let closed_node = self.closed_list.get(node);
-                if let Some(closed_cost) = closed_node.cost.into_option() {
-                    // Node already closed, ensure that we did not find a shorter path.
-                    assert!(closed_cost <= cost);
-                } else {
-                    self.open_list.push(OpenNode {
-                        node,
-                        cost,
-                        predecessor,
-                    });
-                }
-            }
+            self.expand_node(
+                open_node.node,
+                open_node.cost + self.graph.node_data(open_node.node.into_bidirected()).len(),
+            );
         }
 
         // All targets found, backtrack paths and compute actual cost.
@@ -181,6 +142,39 @@ impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaE
                 path
             })
             .collect()
+    }
+
+    fn expand_node(
+        &mut self,
+        from_node: DirectedNodeIndex<IndexType>,
+        from_cost: GfaPathLength<IndexType>,
+    ) {
+        for outgoing_edge in self.graph.iter_outgoing_edges(from_node) {
+            debug_assert_eq!(
+                self.graph
+                    .directed_edge_data(outgoing_edge.index())
+                    .data()
+                    .overlap(),
+                0,
+                "Only GFA graphs with blunt-ended (i.e. zero overlap) edges are supported. Use for example https://github.com/vgteam/GetBlunted to bluntify your graph.",
+            );
+
+            let to_node = outgoing_edge.to();
+            let to_cost = from_cost;
+            let to_predecessor = from_node.into();
+
+            let closed_node = self.closed_list.get(to_node);
+            if let Some(closed_cost) = closed_node.cost.into_option() {
+                // Node already closed, ensure that we did not find a shorter path.
+                assert!(closed_cost <= to_cost);
+            } else {
+                self.open_list.push(OpenNode {
+                    node: to_node,
+                    cost: to_cost,
+                    predecessor: to_predecessor,
+                });
+            }
+        }
     }
 
     fn backtrack_path(
