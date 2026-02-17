@@ -16,8 +16,11 @@ use crate::{
     path::GfaPathLength,
 };
 
+#[cfg(feature = "binary-io")]
+mod binary_io;
 pub mod dijkstra;
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SPQRDecompositionOverlay<
     'graph,
     'spqr,
@@ -48,10 +51,12 @@ pub struct SPQRDecompositionOverlay<
     graph_to_overlay_node_map: TaggedVec<NodeIndex<IndexType>, OptionalNodeIndex<IndexType>>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct OverlayNodeData<IndexType> {
     original_node: NodeIndex<IndexType>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct OverlayEdgeData<IndexType> {
     /// Length of the shortest path between the offsets zero on both nodes in the original graph.
     length: GfaPathLength<IndexType>,

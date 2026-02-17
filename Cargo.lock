@@ -10,14 +10,14 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "bidirected-adjacency-array"
-version = "0.2.5"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a75197baa650d9754c8f636409bce53061a0dcf8408149c7b7c24baf45897bd2"
+checksum = "cc808da298c60f4dfac1b11a8d939e735660e102b096a5048ad2f720c59636a5"
 dependencies = [
  "bitvec",
  "log",
  "num-traits",
- "optional-numeric-index 0.3.5",
+ "optional-numeric-index",
  "permutation",
  "tagged-vec",
  "thiserror",
@@ -82,15 +82,6 @@ dependencies = [
 
 [[package]]
 name = "optional-numeric-index"
-version = "0.3.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1c2a56de54a17ef8e11220829fd32429ec8de752dd9f8a128bef9e25b3a9e5c"
-dependencies = [
- "num-traits",
-]
-
-[[package]]
-name = "optional-numeric-index"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6664336731f2d5b547a7349762c8b3cb2125d7624275f41d23947511974c1760"
@@ -129,36 +120,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc33ff2d4973d518d823d61aa239014831e521c75da58e3df4840d3f47749d09"
 
 [[package]]
-name = "serde"
-version = "1.0.228"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e"
-dependencies = [
- "serde_core",
- "serde_derive",
-]
-
-[[package]]
-name = "serde_core"
-version = "1.0.228"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41d385c7d4ca58e59fc732af25c3983b67ac852c1a25000afe1175de458b67ad"
-dependencies = [
- "serde_derive",
-]
-
-[[package]]
-name = "serde_derive"
-version = "1.0.228"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "smallvec"
 version = "1.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -173,21 +134,20 @@ dependencies = [
  "bitvec",
  "epoch-reset-array",
  "num-traits",
- "optional-numeric-index 0.4.0",
- "serde",
+ "optional-numeric-index",
  "spqr-tree",
  "tagged-vec",
 ]
 
 [[package]]
 name = "spqr-tree"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ddcc0bb9984ad693312e0c7e7ca56ddf806d431f41b58aae18096f623cdfb80"
+checksum = "0239afdb444939c9aba4a0869f4af7f6086ac2364fb887f4325b459152306a6e"
 dependencies = [
  "bidirected-adjacency-array",
  "num-traits",
- "optional-numeric-index 0.4.0",
+ "optional-numeric-index",
  "smallvec",
  "tagged-vec",
  "thiserror",
@@ -206,9 +166,9 @@ dependencies = [
 
 [[package]]
 name = "tagged-vec"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d15b144d518262590998b38eeb962cd0ed9dc24a8de34eef2d0b35990b8bd83e"
+checksum = "45c74f0fd788973d05162cab9e7bd4bcaa7ed306dc1450bf23f0a2a1a303d158"
 
 [[package]]
 name = "tap"
