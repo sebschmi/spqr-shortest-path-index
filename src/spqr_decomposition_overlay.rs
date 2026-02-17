@@ -102,7 +102,7 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
 
         let mut block_cut_overlay_edge_offsets = TaggedVec::from_iter(iter::repeat_n(
             DirectedEdgeIndex::from_usize(0),
-            nodes.len(),
+            graph.node_count() * 2,
         ));
 
         // Create edges for each SPQR node.
@@ -430,9 +430,14 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
         &self,
         node: DirectedNodeIndex<IndexType>,
     ) -> impl Iterator<Item = DirectedEdge<IndexType>> {
-        self.overlay
-            .iter_outgoing_edges(node)
-            .skip(self.block_cut_overlay_edge_offsets[node].into_usize())
+        self.overlay.iter_outgoing_edges(node).skip(
+            self.block_cut_overlay_edge_offsets
+                .get(node)
+                .unwrap_or_else(|| {
+                    panic!("Node index {node} is out of bounds for block_cut_overlay_edge_offsets with length {}.", self.block_cut_overlay_edge_offsets.len())
+                })
+                .into_usize(),
+        )
     }
 
     pub fn iter_outgoing_spqr_tree_edges(

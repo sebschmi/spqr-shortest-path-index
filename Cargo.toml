@@ -21,6 +21,6 @@ bidirected-adjacency-array = { version = "0.3.0" }
 optional-numeric-index = "0.4.0"
 num-traits = "0.2.19"
 binary-heap-plus = "0.5.0"
-tagged-vec = "0.4.5"
+tagged-vec = "0.4.6"
 bitvec = "1.0.1"
 epoch-reset-array = "0.1.0"
