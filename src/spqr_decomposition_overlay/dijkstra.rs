@@ -16,6 +16,9 @@ use crate::{
     spqr_decomposition_overlay::{OverlayLevel, SPQRDecompositionOverlay},
 };
 
+#[cfg(test)]
+mod tests;
+
 pub struct OverlayDijkstra<
     'graph,
     'spqr,

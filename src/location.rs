@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use bidirected_adjacency_array::{
     graph::BidirectedAdjacencyArray,
     index::{DirectedNodeIndex, GraphIndexInteger},
@@ -42,5 +44,17 @@ impl<IndexType: GraphIndexInteger> GfaLocation<IndexType> {
 impl<IndexType: GraphIndexInteger> GfaNodeOffset<IndexType> {
     pub fn into_length(self) -> crate::path::GfaPathLength<IndexType> {
         crate::path::GfaPathLength::from_raw(self.into_raw())
+    }
+}
+
+impl<IndexType: GraphIndexInteger> Display for GfaLocation<IndexType> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}{}[{}]",
+            self.node.into_bidirected(),
+            if self.node.is_forward() { "+" } else { "-" },
+            self.offset,
+        )
     }
 }
