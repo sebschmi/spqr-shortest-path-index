@@ -16,6 +16,8 @@ use crate::{
     spqr_decomposition_overlay::{OverlayLevel, SPQRDecompositionOverlay},
 };
 
+static DEBUG: bool = true;
+
 #[cfg(test)]
 mod tests;
 
@@ -138,31 +140,33 @@ impl<
             (maximum_level, active_blocks, active_spqr_nodes)
         };
 
-        println!("Maximum overlay level: {maximum_level:?}");
-        println!(
-            "Active blocks: {:?}/{}",
-            {
-                let mut active_blocks: Vec<_> = active_blocks
-                    .iter()
-                    .map(|block| block.into_usize())
-                    .collect();
-                active_blocks.sort_unstable();
-                active_blocks
-            },
-            self.overlay.spqr_decomposition().block_count(),
-        );
-        println!(
-            "Active SPQR-tree nodes: {:?}/{}",
-            {
-                let mut active_spqr_nodes: Vec<_> = active_spqr_nodes
-                    .iter()
-                    .map(|spqr_node| spqr_node.into_usize())
-                    .collect();
-                active_spqr_nodes.sort_unstable();
-                active_spqr_nodes
-            },
-            self.overlay.spqr_decomposition().spqr_node_count(),
-        );
+        if DEBUG {
+            println!("Maximum overlay level: {maximum_level:?}");
+            println!(
+                "Active blocks: {:?}/{}",
+                {
+                    let mut active_blocks: Vec<_> = active_blocks
+                        .iter()
+                        .map(|block| block.into_usize())
+                        .collect();
+                    active_blocks.sort_unstable();
+                    active_blocks
+                },
+                self.overlay.spqr_decomposition().block_count(),
+            );
+            println!(
+                "Active SPQR-tree nodes: {:?}/{}",
+                {
+                    let mut active_spqr_nodes: Vec<_> = active_spqr_nodes
+                        .iter()
+                        .map(|spqr_node| spqr_node.into_usize())
+                        .collect();
+                    active_spqr_nodes.sort_unstable();
+                    active_spqr_nodes
+                },
+                self.overlay.spqr_decomposition().spqr_node_count(),
+            );
+        }
 
         self.open_list.clear();
         self.closed_list.reset();
@@ -180,16 +184,18 @@ impl<
         );
         let mut closed_target_counter = 0;
 
-        println!("Source node: {}", source.node());
-        println!("Initial open nodes: {:?}", {
-            let mut open_list: Vec<_> = self
-                .open_list
-                .iter()
-                .map(|open_node| open_node.node)
-                .collect();
-            open_list.sort_unstable();
-            open_list
-        });
+        if DEBUG {
+            println!("Source node: {}", source.node());
+            println!("Initial open nodes: {:?}", {
+                let mut open_list: Vec<_> = self
+                    .open_list
+                    .iter()
+                    .map(|open_node| open_node.node)
+                    .collect();
+                open_list.sort_unstable();
+                open_list
+            });
+        }
 
         while let Some(open_node) = self.open_list.pop()
             && closed_target_counter < targets.len()
