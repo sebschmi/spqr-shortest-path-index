@@ -43,19 +43,29 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
 
 #[cfg(test)]
 mod tests {
-    use std::fs::{self, File};
+    use std::{
+        fs::{self, File},
+        io::BufReader,
+    };
 
-    use bidirected_adjacency_array::io::gfa1::read_gfa1;
-    use spqr_tree::io::plain_spqr_file::read_plain_spqr;
+    use bidirected_adjacency_array::{
+        graph::BidirectedAdjacencyArray,
+        io::gfa1::{PlainGfaEdgeData, PlainGfaNodeData},
+    };
+    use spqr_tree::decomposition::SPQRDecomposition;
 
     use crate::spqr_decomposition_overlay::SPQRDecompositionOverlay;
 
     #[test]
     fn test_binary_io() {
-        let graph = read_gfa1::<u8>(&mut File::open("test_files/tiny1.gfa").unwrap()).unwrap();
+        let graph = BidirectedAdjacencyArray::<u8, PlainGfaNodeData, PlainGfaEdgeData>::read_gfa1(
+            BufReader::new(File::open("test_files/tiny1.gfa").unwrap()),
+        )
+        .unwrap();
         let spqr_decomposition_file = fs::read_to_string("test_files/tiny1.spqr").unwrap();
         let spqr_decomposition =
-            read_plain_spqr(&graph, &mut spqr_decomposition_file.as_bytes()).unwrap();
+            SPQRDecomposition::read_plain_spqr(&graph, &mut spqr_decomposition_file.as_bytes())
+                .unwrap();
         let overlay = SPQRDecompositionOverlay::new(&graph, &spqr_decomposition);
 
         let mut buffer = Vec::new();
