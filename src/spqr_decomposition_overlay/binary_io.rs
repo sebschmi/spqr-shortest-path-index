@@ -40,3 +40,30 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs::{self, File};
+
+    use bidirected_adjacency_array::io::gfa1::read_gfa1;
+    use spqr_tree::io::plain_spqr_file::read_plain_spqr;
+
+    use crate::spqr_decomposition_overlay::SPQRDecompositionOverlay;
+
+    #[test]
+    fn test_binary_io() {
+        let graph = read_gfa1::<u8>(&mut File::open("test_files/tiny1.gfa").unwrap()).unwrap();
+        let spqr_decomposition_file = fs::read_to_string("test_files/tiny1.spqr").unwrap();
+        let spqr_decomposition =
+            read_plain_spqr(&graph, &mut spqr_decomposition_file.as_bytes()).unwrap();
+        let overlay = SPQRDecompositionOverlay::new(&graph, &spqr_decomposition);
+
+        let mut buffer = Vec::new();
+        overlay.write_binary(&mut buffer).unwrap();
+        let read_overlay =
+            SPQRDecompositionOverlay::read_binary(&graph, &spqr_decomposition, &buffer[..])
+                .unwrap();
+
+        assert_eq!(overlay, read_overlay);
+    }
+}

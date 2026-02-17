@@ -86,8 +86,6 @@ impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaE
             true,
         );
 
-        println!("{:?}", self.open_list);
-
         let mut closed_target_counter = 0;
 
         while let Some(open_node) = self.open_list.pop()
