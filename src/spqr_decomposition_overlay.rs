@@ -226,7 +226,7 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
                     0.into(),
                 )),
             )
-            .iter()
+            .values()
             .map(|path| path.length())
             .next()
         {
@@ -262,7 +262,7 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
                     0.into(),
                 )),
             )
-            .iter()
+            .values()
             .map(|path| path.length())
             .next()
         {
@@ -298,7 +298,7 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
                     0.into(),
                 )),
             )
-            .iter()
+            .values()
             .map(|path| path.length())
             .next()
         {
@@ -334,7 +334,7 @@ impl<'graph, 'spqr, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeDat
                     0.into(),
                 )),
             )
-            .iter()
+            .values()
             .map(|path| path.length())
             .next()
         {

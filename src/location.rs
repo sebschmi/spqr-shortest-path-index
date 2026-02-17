@@ -9,7 +9,7 @@ use crate::gfa_graph_extensions::GfaNodeDataExt;
 
 implement_generic_index!(pub GfaNodeOffset, pub OptionalGfaNodeOffset);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct GfaLocation<IndexType> {
     node: DirectedNodeIndex<IndexType>,
     offset: GfaNodeOffset<IndexType>,

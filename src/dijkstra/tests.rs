@@ -37,7 +37,7 @@ fn test_simple_tight_source() {
         &SingleGfaLocationIndex::new_target(GfaLocation::new(8.into(), 2.into())),
     );
     assert_eq!(paths.len(), 1);
-    let path = &paths[0];
+    let path = paths.values().next().unwrap();
 
     let expected_path = vec![
         PathElement::new(0.into(), 3.into(), 3.into()),
@@ -81,7 +81,7 @@ fn test_simple_tight_target() {
         &SingleGfaLocationIndex::new_target(GfaLocation::new(8.into(), 0.into())),
     );
     assert_eq!(paths.len(), 1);
-    let path = &paths[0];
+    let path = paths.values().next().unwrap();
 
     let expected_path = vec![
         PathElement::new(0.into(), 2.into(), 3.into()),
@@ -125,7 +125,7 @@ fn test_simple_tight_source_and_target() {
         &SingleGfaLocationIndex::new_target(GfaLocation::new(8.into(), 0.into())),
     );
     assert_eq!(paths.len(), 1);
-    let path = &paths[0];
+    let path = paths.values().next().unwrap();
 
     let expected_path = vec![
         PathElement::new(0.into(), 3.into(), 3.into()),
@@ -166,7 +166,7 @@ fn test_cycle() {
         &SingleGfaLocationIndex::new_target(GfaLocation::new(0.into(), 0.into())),
     );
     assert_eq!(paths.len(), 1);
-    let path = &paths[0];
+    let path = paths.values().next().unwrap();
 
     let expected_path = vec![
         PathElement::new(0.into(), 3.into(), 3.into()),
@@ -203,7 +203,7 @@ fn test_internal_path() {
         &SingleGfaLocationIndex::new_target(GfaLocation::new(0.into(), 3.into())),
     );
     assert_eq!(paths.len(), 1);
-    let path = &paths[0];
+    let path = paths.values().next().unwrap();
 
     let expected_path = vec![PathElement::new(0.into(), 1.into(), 3.into())];
     let expected_path = GfaPath::new(expected_path, 2.into());
@@ -235,7 +235,7 @@ fn test_internal_empty_path() {
         &SingleGfaLocationIndex::new_target(GfaLocation::new(0.into(), 1.into())),
     );
     assert_eq!(paths.len(), 1);
-    let path = &paths[0];
+    let path = paths.values().next().unwrap();
 
     let expected_path = vec![PathElement::new(0.into(), 1.into(), 1.into())];
     let expected_path = GfaPath::new(expected_path, 0.into());
@@ -267,7 +267,7 @@ fn test_self_loop_external() {
         &SingleGfaLocationIndex::new_target(GfaLocation::new(0.into(), 2.into())),
     );
     assert_eq!(paths.len(), 1);
-    let path = &paths[0];
+    let path = paths.values().next().unwrap();
 
     let expected_path = vec![
         PathElement::new(0.into(), 4.into(), 5.into()),

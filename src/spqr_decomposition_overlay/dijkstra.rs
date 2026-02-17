@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use bidirected_adjacency_array::{
     index::{DirectedNodeIndex, GraphIndexInteger, OptionalDirectedNodeIndex},
@@ -70,7 +70,7 @@ impl<
         &mut self,
         source: GfaLocation<IndexType>,
         targets: &impl GfaLocationIndex<IndexType>,
-    ) -> Vec<GfaPath<IndexType>> {
+    ) -> HashMap<GfaLocation<IndexType>, GfaPath<IndexType>> {
         let (maximum_level, active_blocks, active_spqr_nodes) = {
             let component = self
                 .overlay
@@ -214,7 +214,7 @@ impl<
                     }
                 }
 
-                path
+                path.map(|p| (target, p))
             })
             .collect()
     }

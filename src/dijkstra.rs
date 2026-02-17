@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use bidirected_adjacency_array::{
     graph::BidirectedAdjacencyArray,
     index::{DirectedNodeIndex, GraphIndexInteger, OptionalDirectedNodeIndex},
@@ -70,7 +72,7 @@ impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaE
         &mut self,
         source: GfaLocation<IndexType>,
         targets: &impl GfaLocationIndex<IndexType>,
-    ) -> Vec<GfaPath<IndexType>> {
+    ) -> HashMap<GfaLocation<IndexType>, GfaPath<IndexType>> {
         assert!(targets.is_targets());
 
         self.open_list.clear();
@@ -141,7 +143,7 @@ impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaE
                     }
                 }
 
-                path
+                path.map(|p| (target, p))
             })
             .collect()
     }
