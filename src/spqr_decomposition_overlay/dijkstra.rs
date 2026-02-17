@@ -320,7 +320,11 @@ impl<
                         .directed_edge_data(outgoing_edge.index())
                         .data()
                         .length();
-                let predecessor = from_node.into();
+                let predecessor = if is_source_node {
+                    OptionalDirectedNodeIndex::new_none()
+                } else {
+                    from_node.into()
+                };
 
                 let closed_node = self.closed_list.get(to_node);
                 if let Some(closed_cost) = closed_node.cost.into_option() {
@@ -377,7 +381,11 @@ impl<
                         .graph()
                         .node_data(from_node.into_bidirected())
                         .len();
-                let predecessor = from_node.into();
+                let predecessor = if is_source_node {
+                    OptionalDirectedNodeIndex::new_none()
+                } else {
+                    from_node.into()
+                };
 
                 let closed_node = self.closed_list.get(to_node);
                 if let Some(closed_cost) = closed_node.cost.into_option() {
