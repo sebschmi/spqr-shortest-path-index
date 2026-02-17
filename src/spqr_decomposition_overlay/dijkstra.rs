@@ -138,6 +138,32 @@ impl<
             (maximum_level, active_blocks, active_spqr_nodes)
         };
 
+        println!("Maximum overlay level: {maximum_level:?}");
+        println!(
+            "Active blocks: {:?}/{}",
+            {
+                let mut active_blocks: Vec<_> = active_blocks
+                    .iter()
+                    .map(|block| block.into_usize())
+                    .collect();
+                active_blocks.sort_unstable();
+                active_blocks
+            },
+            self.overlay.spqr_decomposition().block_count(),
+        );
+        println!(
+            "Active SPQR-tree nodes: {:?}/{}",
+            {
+                let mut active_spqr_nodes: Vec<_> = active_spqr_nodes
+                    .iter()
+                    .map(|spqr_node| spqr_node.into_usize())
+                    .collect();
+                active_spqr_nodes.sort_unstable();
+                active_spqr_nodes
+            },
+            self.overlay.spqr_decomposition().spqr_node_count(),
+        );
+
         self.open_list.clear();
         self.closed_list.reset();
 
@@ -153,6 +179,17 @@ impl<
             true,
         );
         let mut closed_target_counter = 0;
+
+        println!("Source node: {}", source.node());
+        println!("Initial open nodes: {:?}", {
+            let mut open_list: Vec<_> = self
+                .open_list
+                .iter()
+                .map(|open_node| open_node.node)
+                .collect();
+            open_list.sort_unstable();
+            open_list
+        });
 
         while let Some(open_node) = self.open_list.pop()
             && closed_target_counter < targets.len()
@@ -282,14 +319,11 @@ impl<
             .overlay
             .spqr_decomposition()
             .has_incident_virtual_edge(from_node.into_bidirected())
-            && active_blocks.contains(
-                &self
-                    .overlay
-                    .spqr_decomposition()
-                    .node_block_indices(from_node.into_bidirected())
-                    .next()
-                    .unwrap(),
-            )
+            && self
+                .overlay
+                .spqr_decomposition()
+                .node_block_indices(from_node.into_bidirected())
+                .any(|block_index| active_blocks.contains(&block_index))
             && maximum_level >= OverlayLevel::SPQRTree
         {
             // Expand node on SPQR-tree level.
@@ -304,14 +338,12 @@ impl<
                     .overlay
                     .directed_overlay_node_to_graph_node(to_overlay_node);
 
-                if !active_blocks.contains(
-                    &self
-                        .overlay
-                        .spqr_decomposition()
-                        .node_block_indices(to_node.into_bidirected())
-                        .next()
-                        .unwrap(),
-                ) {
+                if !self
+                    .overlay
+                    .spqr_decomposition()
+                    .node_block_indices(to_node.into_bidirected())
+                    .any(|block_index| active_blocks.contains(&block_index))
+                {
                     // Skip edges that point into an inactive block.
                     continue;
                 }
@@ -343,14 +375,12 @@ impl<
             }
         }
 
-        if active_spqr_nodes.contains(
-            &self
-                .overlay
-                .spqr_decomposition()
-                .node_spqr_node_indices(from_node.into_bidirected())
-                .next()
-                .unwrap(),
-        ) && maximum_level >= OverlayLevel::SPQRNode
+        if self
+            .overlay
+            .spqr_decomposition()
+            .node_spqr_node_indices(from_node.into_bidirected())
+            .any(|spqr_node_index| active_spqr_nodes.contains(&spqr_node_index))
+            && maximum_level >= OverlayLevel::SPQRNode
         {
             // Expand node on original graph level.
             for outgoing_edge in self.overlay.iter_outgoing_spqr_node_edges(from_node) {
@@ -366,14 +396,12 @@ impl<
 
                 let to_node = outgoing_edge.to();
 
-                if !active_spqr_nodes.contains(
-                    &self
-                        .overlay
-                        .spqr_decomposition()
-                        .node_spqr_node_indices(to_node.into_bidirected())
-                        .next()
-                        .unwrap(),
-                ) {
+                if !self
+                    .overlay
+                    .spqr_decomposition()
+                    .node_spqr_node_indices(to_node.into_bidirected())
+                    .any(|spqr_node_index| active_spqr_nodes.contains(&spqr_node_index))
+                {
                     // Skip edges that point into an inactive SPQR-tree node.
                     continue;
                 }
