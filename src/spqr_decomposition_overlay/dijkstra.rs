@@ -16,7 +16,7 @@ use crate::{
     spqr_decomposition_overlay::{OverlayLevel, SPQRDecompositionOverlay},
 };
 
-static DEBUG: bool = true;
+static DEBUG: bool = false;
 
 #[cfg(test)]
 mod tests;

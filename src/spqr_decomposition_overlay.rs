@@ -20,7 +20,7 @@ use crate::{
 mod binary_io;
 pub mod dijkstra;
 
-static DEBUG: bool = true;
+static DEBUG: bool = false;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SPQRDecompositionOverlay<
