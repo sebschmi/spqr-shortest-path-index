@@ -92,7 +92,10 @@ impl<
                 .node_spqr_node_indices(source.node().into_bidirected())
                 .collect();
 
-            let mut maximum_level = OverlayLevel::SPQRNode;
+            // Using the maximum level like this is complicated, as shortest within the same SPQR-node may traverse a different block due to bidirectedness.
+            // So, for now we disable the maximum level heuristic.
+            // let mut maximum_level = OverlayLevel::SPQRNode;
+            let mut maximum_level = OverlayLevel::BlockCutTree;
             let mut active_blocks = source_blocks.clone();
             let mut active_spqr_nodes = source_spqr_nodes.clone();
 
@@ -103,6 +106,13 @@ impl<
                     .node_component_index(target.node().into_bidirected())
                     != component
                 {
+                    if DEBUG {
+                        println!(
+                            "Target {} is in a different component than the source, skipping",
+                            target.node(),
+                        );
+                    }
+
                     // Targets in different components cannot be reached, so no need to raise the level for them.
                     continue;
                 }
@@ -185,7 +195,31 @@ impl<
         let mut closed_target_counter = 0;
 
         if DEBUG {
-            println!("Source node: {}", source.node());
+            println!(
+                "Source node: {} (blocks: {:?}; spqr_nodes: {:?})",
+                source.node(),
+                {
+                    let mut source_blocks: Vec<_> = self
+                        .overlay
+                        .spqr_decomposition()
+                        .node_block_indices(source.node().into_bidirected())
+                        .map(|block| block.into_usize())
+                        .collect();
+                    source_blocks.sort_unstable();
+                    source_blocks
+                },
+                {
+                    let mut source_spqr_nodes: Vec<_> = self
+                        .overlay
+                        .spqr_decomposition()
+                        .node_spqr_node_indices(source.node().into_bidirected())
+                        .map(|spqr_node| spqr_node.into_usize())
+                        .collect();
+                    source_spqr_nodes.sort_unstable();
+                    source_spqr_nodes
+                },
+            );
+
             println!("Initial open nodes: {:?}", {
                 let mut open_list: Vec<_> = self
                     .open_list
@@ -195,11 +229,53 @@ impl<
                 open_list.sort_unstable();
                 open_list
             });
+
+            for target in targets.iter_targets() {
+                println!(
+                    "Target node: {} (blocks: {:?}; spqr_nodes: {:?})",
+                    target.node(),
+                    {
+                        let mut target_blocks: Vec<_> = self
+                            .overlay
+                            .spqr_decomposition()
+                            .node_block_indices(target.node().into_bidirected())
+                            .map(|block| block.into_usize())
+                            .collect();
+                        target_blocks.sort_unstable();
+                        target_blocks
+                    },
+                    {
+                        let mut target_spqr_nodes: Vec<_> = self
+                            .overlay
+                            .spqr_decomposition()
+                            .node_spqr_node_indices(target.node().into_bidirected())
+                            .map(|spqr_node| spqr_node.into_usize())
+                            .collect();
+                        target_spqr_nodes.sort_unstable();
+                        target_spqr_nodes
+                    },
+                );
+            }
         }
 
         while let Some(open_node) = self.open_list.pop()
             && closed_target_counter < targets.len()
         {
+            let previous_cost = self.closed_list.get(open_node.node).cost;
+            if let Some(previous_cost) = previous_cost.into_option() {
+                debug_assert!(previous_cost <= open_node.cost);
+
+                // Node already closed, skip.
+                continue;
+            }
+
+            if DEBUG {
+                println!(
+                    "Closing open node {} with raw cost {}",
+                    open_node.node, open_node.cost,
+                );
+            }
+
             // Close node.
             self.closed_list.set(
                 open_node.node,
@@ -242,6 +318,10 @@ impl<
                 });
 
                 if let Some(cost) = self.closed_list.get(target.node()).cost.into_option() {
+                    if DEBUG {
+                        println!("Target {} has raw cost {}", target.node(), cost);
+                    }
+
                     let cost = cost - source.offset().into_length() + target.offset().into_length();
                     let outer_path = self.backtrack_path(source, target, cost);
                     if path
@@ -267,6 +347,12 @@ impl<
         active_spqr_nodes: &HashSet<SPQRNodeIndex<IndexType>>,
         is_source_node: bool,
     ) {
+        let from_node_length = self
+            .overlay
+            .graph()
+            .node_data(from_node.into_bidirected())
+            .len();
+
         if self
             .overlay
             .spqr_decomposition()
@@ -287,13 +373,13 @@ impl<
                 let to_node = self
                     .overlay
                     .directed_overlay_node_to_graph_node(to_overlay_node);
-                let cost = from_cost
-                    + self
-                        .overlay
-                        .overlay()
-                        .directed_edge_data(outgoing_edge.index())
-                        .data()
-                        .length();
+                let edge_length = self
+                    .overlay
+                    .overlay()
+                    .directed_edge_data(outgoing_edge.index())
+                    .data()
+                    .length();
+                let cost = from_cost + from_node_length + edge_length;
                 let predecessor = if is_source_node {
                     OptionalDirectedNodeIndex::new_none()
                 } else {
@@ -302,8 +388,12 @@ impl<
 
                 if DEBUG {
                     println!(
-                        "Expanding block-cut tree edge from {} to {} with cost {}",
-                        from_node, to_node, cost,
+                        "Expanding graph edge from {} to {} with cost {} = {} + {} (from_node_length + edge_length)",
+                        from_node,
+                        to_node,
+                        from_node_length + edge_length,
+                        from_node_length,
+                        edge_length,
                     );
                 }
 
@@ -354,13 +444,13 @@ impl<
                     continue;
                 }
 
-                let cost = from_cost
-                    + self
-                        .overlay
-                        .overlay()
-                        .directed_edge_data(outgoing_edge.index())
-                        .data()
-                        .length();
+                let edge_length = self
+                    .overlay
+                    .overlay()
+                    .directed_edge_data(outgoing_edge.index())
+                    .data()
+                    .length();
+                let cost = from_cost + from_node_length + edge_length;
                 let predecessor = if is_source_node {
                     OptionalDirectedNodeIndex::new_none()
                 } else {
@@ -369,8 +459,12 @@ impl<
 
                 if DEBUG {
                     println!(
-                        "Expanding SPQR tree edge from {} to {} with cost {}",
-                        from_node, to_node, cost,
+                        "Expanding graph edge from {} to {} with cost {} = {} + {} (from_node_length + edge_length)",
+                        from_node,
+                        to_node,
+                        from_node_length + edge_length,
+                        from_node_length,
+                        edge_length,
                     );
                 }
 
@@ -419,12 +513,9 @@ impl<
                     continue;
                 }
 
-                let cost = from_cost
-                    + self
-                        .overlay
-                        .graph()
-                        .node_data(from_node.into_bidirected())
-                        .len();
+                // Non-overlay graph edges always have length 0.
+                let edge_length = 0.into();
+                let cost = from_cost + from_node_length + edge_length;
                 let predecessor = if is_source_node {
                     OptionalDirectedNodeIndex::new_none()
                 } else {
@@ -433,8 +524,12 @@ impl<
 
                 if DEBUG {
                     println!(
-                        "Expanding graph edge from {} to {} with cost {}",
-                        from_node, to_node, cost,
+                        "Expanding graph edge from {} to {} with cost {} = {} + {} (from_node_length + edge_length)",
+                        from_node,
+                        to_node,
+                        from_node_length + edge_length,
+                        from_node_length,
+                        edge_length,
                     );
                 }
 
@@ -473,9 +568,17 @@ impl<
             let limit = self
                 .overlay
                 .graph()
-                .node_data(current_node.into_bidirected())
+                .node_data(predecessor.into_bidirected())
                 .len()
                 .into_offset();
+
+            if DEBUG {
+                println!(
+                    "Found inner path element from {} to {} with offset {} and limit {}",
+                    predecessor, current_node, offset, limit,
+                );
+            }
+
             path.push(PathElement::new(predecessor, offset, limit));
             current_node = predecessor;
         }

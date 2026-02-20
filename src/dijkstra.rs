@@ -93,6 +93,14 @@ impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaE
         while let Some(open_node) = self.open_list.pop()
             && closed_target_counter < targets.len()
         {
+            let previous_cost = self.closed_list.get(open_node.node).cost;
+            if let Some(previous_cost) = previous_cost.into_option() {
+                debug_assert!(previous_cost <= open_node.cost);
+
+                // Node already closed, skip.
+                continue;
+            }
+
             // Close node.
             self.closed_list.set(
                 open_node.node,
@@ -205,7 +213,7 @@ impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaE
             let offset = GfaNodeOffset::from_usize(0);
             let limit = self
                 .graph
-                .node_data(current_node.into_bidirected())
+                .node_data(predecessor.into_bidirected())
                 .len()
                 .into_offset();
             path.push(PathElement::new(predecessor, offset, limit));
@@ -225,6 +233,10 @@ impl<'graph, IndexType: GraphIndexInteger, NodeData: GfaNodeData, EdgeData: GfaE
         // Return path.
         path.reverse();
         GfaPath::new(path, cost)
+    }
+
+    pub fn graph(&self) -> &'graph BidirectedAdjacencyArray<IndexType, NodeData, EdgeData> {
+        self.graph
     }
 }
 
