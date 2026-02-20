@@ -190,7 +190,7 @@ impl<
                 let mut open_list: Vec<_> = self
                     .open_list
                     .iter()
-                    .map(|open_node| open_node.node)
+                    .map(|open_node| (open_node.node, open_node.cost))
                     .collect();
                 open_list.sort_unstable();
                 open_list
@@ -242,14 +242,7 @@ impl<
                 });
 
                 if let Some(cost) = self.closed_list.get(target.node()).cost.into_option() {
-                    let cost = cost
-                        + self
-                            .overlay
-                            .graph()
-                            .node_data(source.node().into_bidirected())
-                            .len()
-                        - source.offset().into_length()
-                        + target.offset().into_length();
+                    let cost = cost - source.offset().into_length() + target.offset().into_length();
                     let outer_path = self.backtrack_path(source, target, cost);
                     if path
                         .as_ref()

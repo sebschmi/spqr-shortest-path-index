@@ -98,23 +98,29 @@ fn test_tiny1_0p0_0m0() {
     let paths = dijkstra.shortest_paths(source, &SingleGfaLocationIndex::new_target(target));
     let path = paths.values().next();
     let distance = OptionalGfaPathLength::from(path.map(|p| p.length()));
-    let overlay_distance = OptionalGfaPathLength::from(
-        overlay_dijkstra
-            .shortest_paths(source, &SingleGfaLocationIndex::new_target(target))
-            .values()
-            .map(|path| path.length())
-            .next(),
-    );
+
+    let overlay_paths =
+        overlay_dijkstra.shortest_paths(source, &SingleGfaLocationIndex::new_target(target));
+    let overlay_path = overlay_paths.values().next();
+    let overlay_distance = OptionalGfaPathLength::from(overlay_path.map(|path| path.length()));
+
     assert_eq!(
         distance,
         overlay_distance,
-        "Distances differ for source {source} and target {target}\nPath: {}",
+        "Distances differ for source {source} and target {target}\nReal path: {}\nOverlay path: {}",
         {
             if let Some(path) = path {
                 format!("{path:?}")
             } else {
                 "None".to_string()
             }
-        }
+        },
+        {
+            if let Some(overlay_path) = overlay_path {
+                format!("{overlay_path:?}")
+            } else {
+                "None".to_string()
+            }
+        },
     );
 }
