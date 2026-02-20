@@ -300,13 +300,20 @@ impl<
                     from_node.into()
                 };
 
+                if DEBUG {
+                    println!(
+                        "Expanding block-cut tree edge from {} to {} with cost {}",
+                        from_node, to_node, cost,
+                    );
+                }
+
                 let closed_node = self.closed_list.get(to_node);
                 if let Some(closed_cost) = closed_node.cost.into_option() {
                     // Node already closed, ensure that we did not find a shorter path.
                     assert!(closed_cost <= cost);
                 } else {
                     self.open_list.push(OpenNode {
-                        node: to_overlay_node,
+                        node: to_node,
                         cost,
                         predecessor,
                     });
@@ -360,13 +367,20 @@ impl<
                     from_node.into()
                 };
 
+                if DEBUG {
+                    println!(
+                        "Expanding SPQR tree edge from {} to {} with cost {}",
+                        from_node, to_node, cost,
+                    );
+                }
+
                 let closed_node = self.closed_list.get(to_node);
                 if let Some(closed_cost) = closed_node.cost.into_option() {
                     // Node already closed, ensure that we did not find a shorter path.
                     assert!(closed_cost <= cost);
                 } else {
                     self.open_list.push(OpenNode {
-                        node: to_overlay_node,
+                        node: to_node,
                         cost,
                         predecessor,
                     });
@@ -416,6 +430,13 @@ impl<
                 } else {
                     from_node.into()
                 };
+
+                if DEBUG {
+                    println!(
+                        "Expanding graph edge from {} to {} with cost {}",
+                        from_node, to_node, cost,
+                    );
+                }
 
                 let closed_node = self.closed_list.get(to_node);
                 if let Some(closed_cost) = closed_node.cost.into_option() {
