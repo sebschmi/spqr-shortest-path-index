@@ -10,9 +10,9 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "bidirected-adjacency-array"
-version = "0.3.1"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60757a2c356e2d43cf60bf343556605541fa01203fef9efea7e8a32e74322fef"
+checksum = "97999acb10b3e502feedef8a99c41a07a0a5e1788787fb4a99fcacf0875989b4"
 dependencies = [
  "bitvec",
  "log",
@@ -45,12 +45,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "byteorder"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
-
-[[package]]
 name = "compare"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -70,15 +64,6 @@ name = "funty"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6d5a32815ae3f33302d95fdcb2ce17862f8c65363dcfd29360480ba1001fc9c"
-
-[[package]]
-name = "fxhash"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c31b6d751ae2c7f11320402d34e41349dd1016f8d5d45e48c4312bc8625af50c"
-dependencies = [
- "byteorder",
-]
 
 [[package]]
 name = "log"
@@ -135,6 +120,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc33ff2d4973d518d823d61aa239014831e521c75da58e3df4840d3f47749d09"
 
 [[package]]
+name = "rustc-hash"
+version = "2.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "357703d41365b4b27c590e3ed91eabb1b663f07c4c084095e60cbed4362dff0d"
+
+[[package]]
 name = "smallvec"
 version = "1.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -156,15 +147,15 @@ dependencies = [
 
 [[package]]
 name = "spqr-tree"
-version = "1.0.0"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e44bee5bb63b2691a3cffb94bcde45ea83536ca94662f65fa34dc46668bd51e5"
+checksum = "dfbb6b85ade53a6e135d6194abd71517432b3bb43f8ac190c34de1e1f33874f4"
 dependencies = [
  "bidirected-adjacency-array",
- "fxhash",
  "log",
  "num-traits",
  "optional-numeric-index",
+ "rustc-hash",
  "smallvec",
  "tagged-vec",
  "thiserror",
@@ -183,9 +174,9 @@ dependencies = [
 
 [[package]]
 name = "tagged-vec"
-version = "0.4.6"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db47523a9a9b1d1430f3a78c7700817ab6f80e5296c94e1e9da3f90715358746"
+checksum = "22fe9493b5b9694af2202b6c55b220ef8b11d616bd84809a69102797bc0615d8"
 
 [[package]]
 name = "tap"
