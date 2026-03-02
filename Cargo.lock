@@ -10,15 +10,16 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "bidirected-adjacency-array"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97999acb10b3e502feedef8a99c41a07a0a5e1788787fb4a99fcacf0875989b4"
+checksum = "d0fe457e5d4120cdca58482d637d93de3c313aa16e64ab2c05e7e53df891ee25"
 dependencies = [
  "bitvec",
  "log",
  "num-traits",
  "optional-numeric-index",
  "permutation",
+ "rustc-hash",
  "tagged-vec",
  "thiserror",
 ]
@@ -147,9 +148,9 @@ dependencies = [
 
 [[package]]
 name = "spqr-tree"
-version = "1.0.3"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfbb6b85ade53a6e135d6194abd71517432b3bb43f8ac190c34de1e1f33874f4"
+checksum = "441b964ffedb45910d41045221ff2b30dd20fda8f99e5d78c119fca869b92083"
 dependencies = [
  "bidirected-adjacency-array",
  "log",
@@ -174,9 +175,9 @@ dependencies = [
 
 [[package]]
 name = "tagged-vec"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22fe9493b5b9694af2202b6c55b220ef8b11d616bd84809a69102797bc0615d8"
+checksum = "78f671eb151d7ae65941e73e20b675892bade562a1ccfd4abb029cd5871aee66"
 
 [[package]]
 name = "tap"
