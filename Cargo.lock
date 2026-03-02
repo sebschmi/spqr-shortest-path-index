@@ -83,9 +83,9 @@ dependencies = [
 
 [[package]]
 name = "optional-numeric-index"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6664336731f2d5b547a7349762c8b3cb2125d7624275f41d23947511974c1760"
+checksum = "f67835365c3ab113b1e9f380438a26b8784c72257d59c420201635370a520250"
 dependencies = [
  "num-traits",
 ]
@@ -148,9 +148,9 @@ dependencies = [
 
 [[package]]
 name = "spqr-tree"
-version = "2.0.0"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "441b964ffedb45910d41045221ff2b30dd20fda8f99e5d78c119fca869b92083"
+checksum = "fc20137e5f5143c68f4da4f4b8810ea635b29b8cb5695162113be908ac68b78b"
 dependencies = [
  "bidirected-adjacency-array",
  "log",
