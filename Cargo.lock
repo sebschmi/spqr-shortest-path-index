@@ -10,9 +10,9 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
 name = "bidirected-adjacency-array"
-version = "1.1.0"
+version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0fe457e5d4120cdca58482d637d93de3c313aa16e64ab2c05e7e53df891ee25"
+checksum = "fd8af06316e7a27be061e441c0c4fa459c218d54e16ba0256dd0de43806a9ecc"
 dependencies = [
  "bitvec",
  "log",
@@ -128,9 +128,9 @@ checksum = "94300abf3f1ae2e2b8ffb7b58043de3d399c73fa6f4b73826402a5c457614dbe"
 
 [[package]]
 name = "smallvec"
-version = "1.15.1"
+version = "1.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
+checksum = "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
 
 [[package]]
 name = "spqr-shortest-path-index"
@@ -148,9 +148,9 @@ dependencies = [
 
 [[package]]
 name = "spqr-tree"
-version = "4.0.2"
+version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "662c04ee041412fd53c583a88a3c8d3d2aa904fe4708b91bd7fbae1ce44031da"
+checksum = "c4a4ed73fe9a4bc012e2f4f53515c1cc0754e9088313b3691a91c69d7f1b94c2"
 dependencies = [
  "bidirected-adjacency-array",
  "log",
@@ -164,9 +164,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.117"
+version = "2.0.118"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e665b8803e7b1d2a727f4023456bbbbe74da67099c585258af0ad9c5013b9b99"
+checksum = "1b9ae57f904213ebb649ce6895b8a66c66f0203b9319718f69a5612a065b1422"
 dependencies = [
  "proc-macro2",
  "quote",
